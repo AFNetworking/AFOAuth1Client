@@ -1,4 +1,4 @@
-// AFOAuth1Client.h
+// AFOAuth1Client.m
 //
 // Copyright (c) 2011 Mattt Thompson (http://mattt.me/)
 // 

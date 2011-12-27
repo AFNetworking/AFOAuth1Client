@@ -21,10 +21,11 @@
 // THE SOFTWARE.
 
 #import "AFOAuth1Client.h"
+#import "AFHTTPRequestOperation.h"
 
 #include "hmac.h"
 
-static inline NSDictionary * AFParametersFromQueryString(NSString *queryString, NSStringEncoding stringEncoding) {
+static inline NSDictionary * AFParametersFromQueryString(NSString *queryString) {
     NSMutableDictionary *parameters = [NSMutableDictionary dictionary];
     if (queryString) {
         NSScanner *parameterScanner = [[[NSScanner alloc] initWithString:queryString] autorelease];
@@ -41,7 +42,7 @@ static inline NSDictionary * AFParametersFromQueryString(NSString *queryString, 
             [parameterScanner scanString:@"&" intoString:NULL];		
             
             if (name && value) {
-                [parameters setValue:[value stringByReplacingPercentEscapesUsingEncoding:stringEncoding] forKey:[name stringByReplacingPercentEscapesUsingEncoding:stringEncoding]];
+                [parameters setValue:[value stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding] forKey:[name stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding]];
             }
         }
     }
@@ -132,9 +133,9 @@ static inline NSString * AFPlaintextSignatureWithConsumerSecretAndRequestTokenSe
 static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAndRequestTokenSecret(AFOAuthSignatureMethod signatureMethod, NSString *consumerSecret, NSString *requestTokenSecret, NSStringEncoding stringEncoding) {
     switch (signatureMethod) {
         case AFHMACSHA1SignatureMethod:
-            return AFHMACSHA1SignatureWithConsumerSecretAndRequestTokenSecret(self.secret, nil);
+            return AFHMACSHA1SignatureWithConsumerSecretAndRequestTokenSecret(consumerSecret, requestTokenSecret, stringEncoding);
         case AFPlaintextSignatureMethod:
-            return AFPlaintextSignatureWithConsumerSecretAndRequestTokenSecret(self.secret, nil);
+            return AFPlaintextSignatureWithConsumerSecretAndRequestTokenSecret(consumerSecret, requestTokenSecret, stringEncoding);
         default:
             return nil;
     }
@@ -151,6 +152,7 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
 @synthesize secret = _secret;
 @synthesize serviceProviderIdentifier = _serviceProviderIdentifier;
 @synthesize signatureMethod = _signatureMethod;
+@synthesize realm = _realm;
 
 - (id)initWithBaseURL:(NSURL *)url
                   key:(NSString *)clientID
@@ -173,6 +175,7 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
     [_key release];
     [_secret release];
     [_serviceProviderIdentifier release];
+    [_realm release];
     [super dealloc];
 }
 
@@ -220,10 +223,10 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
     }
     
     [parameters setValue:AFNonceWithPath(path) forKey:@"oauth_nonce"];
-    [parameters setValue:[[NSNumber numberWithInteger:floorf([timestamp timeIntervalSince1970])] stringValue] forKey:@"oauth_timestamp"];
+    [parameters setValue:[[NSNumber numberWithInteger:floorf([[NSDate date] timeIntervalSince1970])] stringValue] forKey:@"oauth_timestamp"];
     
     [parameters setValue:NSStringFromAFOAuthSignatureMethod(self.signatureMethod) forKey:@"oauth_signature_method"];
-    [parameters setValue:AFSignatureUsingMethodWithSignatureWithConsumerSecretAndRequestTokenSecret(self.signatureMethod, self.secret, nil) forKey:@"oauth_signature"];
+    [parameters setValue:AFSignatureUsingMethodWithSignatureWithConsumerSecretAndRequestTokenSecret(self.signatureMethod, self.secret, nil, self.stringEncoding) forKey:@"oauth_signature"];
     
     [parameters setValue:kAFOAuth1Version forKey:@"oauth_version"];
     
@@ -263,10 +266,10 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
     }
     
     [parameters setValue:AFNonceWithPath(path) forKey:@"oauth_nonce"];
-    [parameters setValue:[[NSNumber numberWithInteger:floorf([timestamp timeIntervalSince1970])] stringValue] forKey:@"oauth_timestamp"];
+    [parameters setValue:[[NSNumber numberWithInteger:floorf([[NSDate date] timeIntervalSince1970])] stringValue] forKey:@"oauth_timestamp"];
     
     [parameters setValue:NSStringFromAFOAuthSignatureMethod(self.signatureMethod) forKey:@"oauth_signature_method"];
-    [parameters setValue:AFSignatureUsingMethodWithSignatureWithConsumerSecretAndRequestTokenSecret(self.signatureMethod, self.secret, requestToken.secret) forKey:@"oauth_signature"];
+    [parameters setValue:AFSignatureUsingMethodWithSignatureWithConsumerSecretAndRequestTokenSecret(self.signatureMethod, self.secret, requestToken.secret, self.stringEncoding) forKey:@"oauth_signature"];
     
     [parameters setValue:kAFOAuth1Version forKey:@"oauth_version"];
     
