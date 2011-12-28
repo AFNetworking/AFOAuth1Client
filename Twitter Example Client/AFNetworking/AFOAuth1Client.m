@@ -230,9 +230,23 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
         
         [[UIApplication sharedApplication] openURL:[[self requestWithMethod:@"GET" path:userAuthorizationPath parameters:parameters] URL]];
 #else
-//        TODO
-
-//        [[NSWorkspace sharedWorkspace] openURL:userAuthURL];
+        [[NSNotificationCenter defaultCenter] addObserverForName:NSApplicationDidFinishLaunchingNotification object:nil queue:self.operationQueue usingBlock:^(NSNotification *notification) {
+//            NSURL *url = [[notification userInfo] valueForKey:UIApplicationLaunchOptionsURLKey];
+//            NSLog(@"URL: %@", url);
+            
+            [self acquireOAuthAccessTokenWithPath:accessTokenPath requestToken:nil success:^(AFOAuth1Token * accessToken) {
+                if (success) {
+                    success(accessToken);
+                }
+            } failure:failure];
+        }];
+        
+        NSLog(@"Going out");
+        
+        NSMutableDictionary *parameters = [NSMutableDictionary dictionary];
+        [parameters setValue:requestToken.key forKey:@"oauth_token"];
+        
+        [[NSWorkspace sharedWorkspace] openURL:[[self requestWithMethod:@"GET" path:userAuthorizationPath parameters:parameters] URL]];
 #endif
     } failure:failure];
 }
