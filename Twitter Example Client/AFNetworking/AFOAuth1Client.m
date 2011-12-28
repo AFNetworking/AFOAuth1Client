@@ -258,12 +258,17 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
     
     [parameters setValue:kAFOAuth1Version forKey:@"oauth_version"];
     
-    [parameters setValue:@"af-twitter://success" forKey:@"oauth_callback"];
+    
+    [parameters setValue:@"af-twitter%253A%252F%252Fsuccess" forKey:@"oauth_callback"];
+
     
     NSMutableURLRequest *mutableRequest = [self requestWithMethod:@"GET" path:path parameters:parameters];
     [mutableRequest setHTTPMethod:@"POST"];
     
     [parameters setValue:AFSignatureUsingMethodWithSignatureWithConsumerSecretAndRequestTokenSecret(mutableRequest, self.signatureMethod, self.secret, nil, self.stringEncoding) forKey:@"oauth_signature"];
+    
+    [parameters setValue:@"af-twitter://success" forKey:@"oauth_callback"];
+
     
     NSArray *sortedComponents = [[AFQueryStringFromParametersWithEncoding(parameters, self.stringEncoding) componentsSeparatedByString:@"&"] sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)];
     NSMutableArray *mutableComponents = [NSMutableArray array];
