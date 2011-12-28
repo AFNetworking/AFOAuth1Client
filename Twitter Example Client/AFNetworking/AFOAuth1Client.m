@@ -122,10 +122,9 @@ static inline NSString * AFHMACSHA1SignatureWithConsumerSecretAndRequestTokenSec
     NSString *secretString = [NSString stringWithFormat:@"%@&%@", consumerSecret, @""];
     NSData *secretStringData = [secretString dataUsingEncoding:stringEncoding];
     
-    NSString *queryString = [[[[[request URL] query] componentsSeparatedByString:@"&"] sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)] componentsJoinedByString:@"&"];
-    NSLog(@"Before: %@      After: %@", [[request URL] query], queryString);
+    NSString *queryString = AFURLEncodedStringFromStringWithEncoding([[[[[request URL] query] componentsSeparatedByString:@"&"] sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)] componentsJoinedByString:@"&"], stringEncoding);
     
-    NSString *requestString = [NSString stringWithFormat:@"%@&%@&%@", [request HTTPMethod], AFURLEncodedStringFromStringWithEncoding([[[[request URL] absoluteString] componentsSeparatedByString:@"?"] objectAtIndex:0], stringEncoding), AFURLEncodedStringFromStringWithEncoding(queryString, stringEncoding)];
+    NSString *requestString = [NSString stringWithFormat:@"%@&%@&%@", [request HTTPMethod], AFURLEncodedStringFromStringWithEncoding([[[[request URL] absoluteString] componentsSeparatedByString:@"?"] objectAtIndex:0], stringEncoding), queryString];
     NSData *requestStringData = [requestString dataUsingEncoding:stringEncoding];
 //    NSData *consumerSecretData = [consumerSecret dataUsingEncoding:stringEncoding];
 //    NSData *requestTokenSecretData = [requestTokenSecret dataUsingEncoding:stringEncoding];
@@ -211,13 +210,13 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
                                         success:(void (^)(AFOAuth1Token *accessToken))success 
                                         failure:(void (^)(NSError *error))failure
 {
-    [self acquireOAuthRequestTokenWithPath:requestTokenPath callback:callbackURL success:^(id requestToken) {
+    [self acquireOAuthRequestTokenWithPath:requestTokenPath callback:callbackURL success:^(AFOAuth1Token *requestToken) {
 #if __IPHONE_OS_VERSION_MIN_REQUIRED
         [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationDidFinishLaunchingNotification object:nil queue:self.operationQueue usingBlock:^(NSNotification *notification) {
             NSURL *url = [[notification userInfo] valueForKey:UIApplicationLaunchOptionsURLKey];
             NSLog(@"URL: %@", url);
             
-            [self acquireOAuthAccessTokenWithPath:accessTokenPath requestToken:nil success:^(id accessToken) {
+            [self acquireOAuthAccessTokenWithPath:accessTokenPath requestToken:nil success:^(AFOAuth1Token * accessToken) {
                 if (success) {
                     success(accessToken);
                 }
@@ -226,7 +225,10 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
         
         NSLog(@"Going out");
         
-        [[UIApplication sharedApplication] openURL:[[self requestWithMethod:@"GET" path:userAuthorizationPath parameters:nil] URL]];
+        NSMutableDictionary *parameters = [NSMutableDictionary dictionary];
+        [parameters setValue:requestToken.key forKey:@"oauth_token"];
+        
+        [[UIApplication sharedApplication] openURL:[[self requestWithMethod:@"GET" path:userAuthorizationPath parameters:parameters] URL]];
 #else
 //        TODO
 
@@ -256,7 +258,7 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
     
     [parameters setValue:kAFOAuth1Version forKey:@"oauth_version"];
     
-    [parameters setValue:[callbackURL absoluteString] forKey:@"oauth_callback"];
+    [parameters setValue:@"af-twitter://success" forKey:@"oauth_callback"];
     
     NSMutableURLRequest *mutableRequest = [self requestWithMethod:@"GET" path:path parameters:parameters];
     [mutableRequest setHTTPMethod:@"POST"];
@@ -296,42 +298,41 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
                                 success:(void (^)(AFOAuth1Token *accessToken))success 
                                 failure:(void (^)(NSError *error))failure
 {
-    NSLog(@"TODO");
-//    [self clearAuthorizationHeader];
-//        
-//    NSMutableDictionary *parameters = [NSMutableDictionary dictionary];
-//    [parameters setValue:self.key forKey:@"oauth_consumer_key"];
-//    [parameters setValue:requestToken.key forKey:@"oauth_token"];
-//    [parameters setValue:requestToken.verifier forKey:@"oauth_verifier"];
-//
-//    if (self.realm) {
-//        [parameters setValue:self.realm forKey:@"realm"];
-//    }
-//    
-//    [parameters setValue:AFNonceWithPath(path) forKey:@"oauth_nonce"];
-//    [parameters setValue:[[NSNumber numberWithInteger:floorf([[NSDate date] timeIntervalSince1970])] stringValue] forKey:@"oauth_timestamp"];
-//    
-//    [parameters setValue:NSStringFromAFOAuthSignatureMethod(self.signatureMethod) forKey:@"oauth_signature_method"];
-//    [parameters setValue:AFSignatureUsingMethodWithSignatureWithConsumerSecretAndRequestTokenSecret([self requestWithMethod:@"POST" path:path parameters:parameters], self.signatureMethod, self.secret, requestToken.secret, self.stringEncoding) forKey:@"oauth_signature"];
-//    
-//    [parameters setValue:kAFOAuth1Version forKey:@"oauth_version"];
-//    
-//    [self setDefaultHeader:@"Authorization" value:AFQueryStringFromParametersWithEncoding(parameters, self.stringEncoding)];
-//    
-//    [self postPath:path parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
-//        NSLog(@"Success: %@", operation.responseString);
-//        
-//        if (success) {
-//            AFOAuth1Token *accessToken = [[[AFOAuth1Token alloc] initWithQueryString:operation.responseString] autorelease];
-//            success(accessToken);
-//        }
-//    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
-//        NSLog(@"Failure: %@", error);
-//        
-//        if (failure) {
-//            failure(error);
-//        }
-//    }];
+    [self clearAuthorizationHeader];
+        
+    NSMutableDictionary *parameters = [NSMutableDictionary dictionary];
+    [parameters setValue:self.key forKey:@"oauth_consumer_key"];
+    [parameters setValue:requestToken.key forKey:@"oauth_token"];
+    [parameters setValue:requestToken.verifier forKey:@"oauth_verifier"];
+
+    if (self.realm) {
+        [parameters setValue:self.realm forKey:@"realm"];
+    }
+    
+    [parameters setValue:AFNonceWithPath(path) forKey:@"oauth_nonce"];
+    [parameters setValue:[[NSNumber numberWithInteger:floorf([[NSDate date] timeIntervalSince1970])] stringValue] forKey:@"oauth_timestamp"];
+    
+    [parameters setValue:NSStringFromAFOAuthSignatureMethod(self.signatureMethod) forKey:@"oauth_signature_method"];
+    [parameters setValue:AFSignatureUsingMethodWithSignatureWithConsumerSecretAndRequestTokenSecret([self requestWithMethod:@"POST" path:path parameters:parameters], self.signatureMethod, self.secret, requestToken.secret, self.stringEncoding) forKey:@"oauth_signature"];
+    
+    [parameters setValue:kAFOAuth1Version forKey:@"oauth_version"];
+    
+    [self setDefaultHeader:@"Authorization" value:AFQueryStringFromParametersWithEncoding(parameters, self.stringEncoding)];
+    
+    [self postPath:path parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
+        NSLog(@"Success: %@", operation.responseString);
+        
+        if (success) {
+            AFOAuth1Token *accessToken = [[[AFOAuth1Token alloc] initWithQueryString:operation.responseString] autorelease];
+            success(accessToken);
+        }
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+        NSLog(@"Failure: %@", error);
+        
+        if (failure) {
+            failure(error);
+        }
+    }];
 }
 
 - (NSMutableURLRequest *)requestWithMethod:(NSString *)method path:(NSString *)path parameters:(NSDictionary *)parameters {
