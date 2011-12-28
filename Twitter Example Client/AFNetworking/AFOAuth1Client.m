@@ -267,7 +267,7 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
     
     [parameters setValue:AFSignatureUsingMethodWithSignatureWithConsumerSecretAndRequestTokenSecret(mutableRequest, self.signatureMethod, self.secret, nil, self.stringEncoding) forKey:@"oauth_signature"];
     
-    [parameters setValue:@"af-twitter://success" forKey:@"oauth_callback"];
+    [parameters setValue:[callbackURL absoluteString] forKey:@"oauth_callback"];
 
     
     NSArray *sortedComponents = [[AFQueryStringFromParametersWithEncoding(parameters, self.stringEncoding) componentsSeparatedByString:@"&"] sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)];
