@@ -29,7 +29,7 @@
  */
 
 #include "sha1.h"
-
+#include "hmac.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -46,7 +46,7 @@ u_int8_t k_opad[B + 1]; /* outer padding - key XORd with opad */
 if (inKeyLength > B)
 	{
 	SHA1Init(&theSHA1Context);
-	SHA1Update(&theSHA1Context, inKey, inKeyLength);
+	SHA1Update(&theSHA1Context, inKey, (unsigned int)inKeyLength);
 	SHA1Final(inKey, &theSHA1Context);
 	inKeyLength = L;
 	}
@@ -70,7 +70,7 @@ for (i = 0; i < B; i++)
 */
 SHA1Init(&theSHA1Context);                 /* init context for 1st pass */
 SHA1Update(&theSHA1Context, k_ipad, B);     /* start with inner pad */
-SHA1Update(&theSHA1Context, (u_int8_t *)inText, inTextLength); /* then text of datagram */
+SHA1Update(&theSHA1Context, (u_int8_t *)inText, (unsigned int)inTextLength); /* then text of datagram */
 SHA1Final((u_int8_t *)outDigest, &theSHA1Context);                /* finish up 1st pass */
 
 /*
