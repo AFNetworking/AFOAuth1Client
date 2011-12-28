@@ -276,7 +276,7 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
     
     [self setDefaultHeader:@"Authorization" value:oauthString];
     
-    [self postPath:[path stringByAppendingFormat:@"?%@", AFQueryStringFromParametersWithEncoding(parameters, self.stringEncoding)] parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
+    [self postPath:path parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
         NSLog(@"Success: %@", operation.responseString);
         
         if (success) {
