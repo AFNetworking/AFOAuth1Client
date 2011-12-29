@@ -272,8 +272,8 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
     
     [parameters setValue:kAFOAuth1Version forKey:@"oauth_version"];
     
-    
-    [parameters setValue:@"af-twitter%253A%252F%252Fsuccess" forKey:@"oauth_callback"];
+    NSString *callbackString = AFURLEncodedStringFromStringWithEncoding([callbackURL absoluteString], self.stringEncoding);
+    [parameters setValue:[callbackString stringByReplacingOccurrencesOfString:@"%" withString:@"%25"] forKey:@"oauth_callback"];
 
     
     NSMutableURLRequest *mutableRequest = [self requestWithMethod:@"GET" path:path parameters:parameters];
