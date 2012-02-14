@@ -230,9 +230,23 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
         
         [[UIApplication sharedApplication] openURL:[[self requestWithMethod:@"GET" path:userAuthorizationPath parameters:parameters] URL]];
 #else
-//        TODO
-
-//        [[NSWorkspace sharedWorkspace] openURL:userAuthURL];
+        [[NSNotificationCenter defaultCenter] addObserverForName:NSApplicationDidFinishLaunchingNotification object:nil queue:self.operationQueue usingBlock:^(NSNotification *notification) {
+//            NSURL *url = [[notification userInfo] valueForKey:UIApplicationLaunchOptionsURLKey];
+//            NSLog(@"URL: %@", url);
+            
+            [self acquireOAuthAccessTokenWithPath:accessTokenPath requestToken:nil success:^(AFOAuth1Token * accessToken) {
+                if (success) {
+                    success(accessToken);
+                }
+            } failure:failure];
+        }];
+        
+        NSLog(@"Going out");
+        
+        NSMutableDictionary *parameters = [NSMutableDictionary dictionary];
+        [parameters setValue:requestToken.key forKey:@"oauth_token"];
+        
+        [[NSWorkspace sharedWorkspace] openURL:[[self requestWithMethod:@"GET" path:userAuthorizationPath parameters:parameters] URL]];
 #endif
     } failure:failure];
 }
@@ -258,8 +272,8 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
     
     [parameters setValue:kAFOAuth1Version forKey:@"oauth_version"];
     
-    
-    [parameters setValue:@"af-twitter%253A%252F%252Fsuccess" forKey:@"oauth_callback"];
+    NSString *callbackString = AFURLEncodedStringFromStringWithEncoding([callbackURL absoluteString], self.stringEncoding);
+    [parameters setValue:[callbackString stringByReplacingOccurrencesOfString:@"%" withString:@"%25"] forKey:@"oauth_callback"];
 
     
     NSMutableURLRequest *mutableRequest = [self requestWithMethod:@"GET" path:path parameters:parameters];
