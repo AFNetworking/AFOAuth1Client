@@ -101,6 +101,7 @@ static inline BOOL AFQueryStringValueIsTrue(NSString *value) {
 #pragma mark -
 
 NSString * const kAFOAuth1Version = @"1.0";
+NSString * const kAFApplicationLaunchedWithURLNotification = @"kAFApplicationLaunchedWithURLNotification";
 
 static inline NSString * AFNonceWithPath(NSString *path) {
     return @"cmVxdWVzdF90bw";
@@ -165,10 +166,34 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
     }
 }
 
+
+@interface NSURL (AFQueryExtraction)
+- (NSString *)AF_getParamNamed:(NSString *)paramName;
+@end
+
+@implementation NSURL (AFQueryExtraction)
+
+- (NSString *)AF_getParamNamed:(NSString *)paramName {
+    NSString* query = [self query];
+    
+    NSScanner *scanner = [NSScanner scannerWithString:query];
+    NSString *searchString = [[NSString alloc] initWithFormat:@"%@=",paramName];
+    [scanner scanUpToString:searchString intoString:nil];
+    // ToDo: check if this + [searchString length] works with all urlencoded params?
+    NSUInteger startPos = [scanner scanLocation] + [searchString length];
+    [scanner scanUpToString:@"&" intoString:nil];
+    NSUInteger endPos = [scanner scanLocation];
+    return [query substringWithRange:NSMakeRange(startPos, endPos - startPos)];
+}
+
+@end
+
 @interface AFOAuth1Client ()
 @property (readwrite, nonatomic, copy) NSString *key;
 @property (readwrite, nonatomic, copy) NSString *secret;
 @property (readwrite, nonatomic, copy) NSString *serviceProviderIdentifier;
+@property (strong, readwrite, nonatomic) AFOAuth1Token *currentRequestToken;
+
 @end
 
 @implementation AFOAuth1Client
@@ -177,6 +202,7 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
 @synthesize serviceProviderIdentifier = _serviceProviderIdentifier;
 @synthesize signatureMethod = _signatureMethod;
 @synthesize realm = _realm;
+@synthesize currentRequestToken = _currentRequestToken;
 
 - (id)initWithBaseURL:(NSURL *)url
                   key:(NSString *)clientID
@@ -211,12 +237,17 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
                                         failure:(void (^)(NSError *error))failure
 {
     [self acquireOAuthRequestTokenWithPath:requestTokenPath callback:callbackURL success:^(AFOAuth1Token *requestToken) {
-#if __IPHONE_OS_VERSION_MIN_REQUIRED
-        [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationDidFinishLaunchingNotification object:nil queue:self.operationQueue usingBlock:^(NSNotification *notification) {
+        self.currentRequestToken = requestToken;
+        [[NSNotificationCenter defaultCenter] addObserverForName:kAFApplicationLaunchedWithURLNotification object:nil queue:self.operationQueue usingBlock:^(NSNotification *notification) {
+
             NSURL *url = [[notification userInfo] valueForKey:UIApplicationLaunchOptionsURLKey];
             NSLog(@"URL: %@", url);
             
-            [self acquireOAuthAccessTokenWithPath:accessTokenPath requestToken:nil success:^(AFOAuth1Token * accessToken) {
+            self.currentRequestToken.verifier = [url AF_getParamNamed:@"oauth_verifier"];
+            
+            NSLog(@"verifier %@", self.currentRequestToken.verifier);
+            
+            [self acquireOAuthAccessTokenWithPath:accessTokenPath requestToken:self.currentRequestToken success:^(AFOAuth1Token * accessToken) {
                 if (success) {
                     success(accessToken);
                 }
@@ -227,25 +258,9 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
         
         NSMutableDictionary *parameters = [NSMutableDictionary dictionary];
         [parameters setValue:requestToken.key forKey:@"oauth_token"];
-        
+#if __IPHONE_OS_VERSION_MIN_REQUIRED
         [[UIApplication sharedApplication] openURL:[[self requestWithMethod:@"GET" path:userAuthorizationPath parameters:parameters] URL]];
 #else
-        [[NSNotificationCenter defaultCenter] addObserverForName:NSApplicationDidFinishLaunchingNotification object:nil queue:self.operationQueue usingBlock:^(NSNotification *notification) {
-//            NSURL *url = [[notification userInfo] valueForKey:UIApplicationLaunchOptionsURLKey];
-//            NSLog(@"URL: %@", url);
-            
-            [self acquireOAuthAccessTokenWithPath:accessTokenPath requestToken:nil success:^(AFOAuth1Token * accessToken) {
-                if (success) {
-                    success(accessToken);
-                }
-            } failure:failure];
-        }];
-        
-        NSLog(@"Going out");
-        
-        NSMutableDictionary *parameters = [NSMutableDictionary dictionary];
-        [parameters setValue:requestToken.key forKey:@"oauth_token"];
-        
         [[NSWorkspace sharedWorkspace] openURL:[[self requestWithMethod:@"GET" path:userAuthorizationPath parameters:parameters] URL]];
 #endif
     } failure:failure];
@@ -338,7 +353,7 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
     
     [self setDefaultHeader:@"Authorization" value:AFQueryStringFromParametersWithEncoding(parameters, self.stringEncoding)];
     
-    [self postPath:path parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
+    [self postPath:path parameters:parameters success:^(AFHTTPRequestOperation *operation, id responseObject) {
         NSLog(@"Success: %@", operation.responseString);
         
         if (success) {

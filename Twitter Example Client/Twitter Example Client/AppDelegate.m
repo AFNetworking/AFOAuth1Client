@@ -10,6 +10,8 @@
 
 #import "ViewController.h"
 
+#import "AFOAuth1Client.h"
+
 @implementation AppDelegate
 
 @synthesize window = _window;
@@ -35,6 +37,11 @@
 - (BOOL)application:(UIApplication *)application handleOpenURL:(NSURL *)url
 {
     NSLog(@"twitter callback: %@", url);
+    
+    NSNotification *notification = [NSNotification notificationWithName:kAFApplicationLaunchedWithURLNotification object:nil userInfo:[NSDictionary dictionaryWithObject:url forKey:UIApplicationLaunchOptionsURLKey]];
+    [[NSNotificationCenter defaultCenter] postNotification:notification];
+
+    
     return YES;
 }
 

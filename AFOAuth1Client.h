@@ -23,6 +23,7 @@
 #import "AFHTTPClient.h"
 
 extern NSString * const kAFOAuth1Version;
+extern NSString * const kAFApplicationLaunchedWithURLNotification;
 
 enum {
 	AFOAuthSignatureMethodRejected = 0,
