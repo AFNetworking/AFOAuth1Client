@@ -127,8 +127,8 @@ static inline NSString * AFHMACSHA1SignatureWithConsumerSecretAndRequestTokenSec
     
     NSString *requestString = [NSString stringWithFormat:@"%@&%@&%@", [request HTTPMethod], AFURLEncodedStringFromStringWithEncoding([[[[request URL] absoluteString] componentsSeparatedByString:@"?"] objectAtIndex:0], stringEncoding), queryString];
     NSData *requestStringData = [requestString dataUsingEncoding:stringEncoding];
-//    NSData *consumerSecretData = [consumerSecret dataUsingEncoding:stringEncoding];
-//    NSData *requestTokenSecretData = [requestTokenSecret dataUsingEncoding:stringEncoding];
+    //    NSData *consumerSecretData = [consumerSecret dataUsingEncoding:stringEncoding];
+    //    NSData *requestTokenSecretData = [requestTokenSecret dataUsingEncoding:stringEncoding];
     unsigned char result[20];
     hmac_sha1((unsigned char *)[requestStringData bytes], [requestStringData length], (unsigned char *)[secretStringData bytes], [secretStringData length], result);
     
@@ -239,7 +239,7 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
     [self acquireOAuthRequestTokenWithPath:requestTokenPath callback:callbackURL success:^(AFOAuth1Token *requestToken) {
         self.currentRequestToken = requestToken;
         [[NSNotificationCenter defaultCenter] addObserverForName:kAFApplicationLaunchedWithURLNotification object:nil queue:self.operationQueue usingBlock:^(NSNotification *notification) {
-
+            
             NSURL *url = [[notification userInfo] valueForKey:UIApplicationLaunchOptionsURLKey];
             NSLog(@"URL: %@", url);
             
@@ -287,9 +287,11 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
     
     [parameters setValue:kAFOAuth1Version forKey:@"oauth_version"];
     
-    NSString *callbackString = AFURLEncodedStringFromStringWithEncoding([callbackURL absoluteString], self.stringEncoding);
-    [parameters setValue:[callbackString stringByReplacingOccurrencesOfString:@"%" withString:@"%25"] forKey:@"oauth_callback"];
-
+//    NSString *callbackString = AFURLEncodedStringFromStringWithEncoding([callbackURL absoluteString], self.stringEncoding);
+//    [parameters setValue:[callbackString stringByReplacingOccurrencesOfString:@"%" withString:@"%25"] forKey:@"oauth_callback"];
+    
+    [parameters setValue:[callbackURL absoluteString] forKey:@"oauth_callback"];
+    
     
     NSMutableURLRequest *mutableRequest = [self requestWithMethod:@"GET" path:path parameters:parameters];
     [mutableRequest setHTTPMethod:@"POST"];
@@ -297,7 +299,7 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
     [parameters setValue:AFSignatureUsingMethodWithSignatureWithConsumerSecretAndRequestTokenSecret(mutableRequest, self.signatureMethod, self.secret, nil, self.stringEncoding) forKey:@"oauth_signature"];
     
     [parameters setValue:[callbackURL absoluteString] forKey:@"oauth_callback"];
-
+    
     
     NSArray *sortedComponents = [[AFQueryStringFromParametersWithEncoding(parameters, self.stringEncoding) componentsSeparatedByString:@"&"] sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)];
     NSMutableArray *mutableComponents = [NSMutableArray array];
@@ -333,12 +335,12 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
                                 failure:(void (^)(NSError *error))failure
 {
     [self clearAuthorizationHeader];
-        
+    
     NSMutableDictionary *parameters = [NSMutableDictionary dictionary];
     [parameters setValue:self.key forKey:@"oauth_consumer_key"];
     [parameters setValue:requestToken.key forKey:@"oauth_token"];
     [parameters setValue:requestToken.verifier forKey:@"oauth_verifier"];
-
+    
     if (self.realm) {
         [parameters setValue:self.realm forKey:@"realm"];
     }

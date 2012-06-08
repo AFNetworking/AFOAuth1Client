@@ -70,8 +70,8 @@ typedef enum {
 
 - (void)acquireOAuthAccessTokenWithPath:(NSString *)path
                            requestToken:(AFOAuth1Token *)requestToken
-                               success:(void (^)(AFOAuth1Token *accessToken))success 
-                               failure:(void (^)(NSError *error))failure;
+                                success:(void (^)(AFOAuth1Token *accessToken))success 
+                                failure:(void (^)(NSError *error))failure;
 
 @end
 
