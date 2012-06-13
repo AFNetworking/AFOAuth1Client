@@ -103,9 +103,12 @@ static inline BOOL AFQueryStringValueIsTrue(NSString *value) {
 NSString * const kAFOAuth1Version = @"1.0";
 NSString * const kAFApplicationLaunchedWithURLNotification = @"kAFApplicationLaunchedWithURLNotification";
 
+// TODO: the nonce is not path specific, so fix the signature:
 static inline NSString * AFNonceWithPath(NSString *path) {
-    return @"cmVxdWVzdF90bw";
-    return AFBase64EncodedStringFromString([[NSString stringWithFormat:@"%@-%@", path, [[NSDate date] description]] substringWithRange:NSMakeRange(0, 10)]);
+    CFUUIDRef uuid = CFUUIDCreate(NULL);
+    CFStringRef string = CFUUIDCreateString(NULL, uuid);
+    CFRelease(uuid);
+    return [(NSString *)string autorelease];
 }
 
 static inline NSString * NSStringFromAFOAuthSignatureMethod(AFOAuthSignatureMethod signatureMethod) {
@@ -120,7 +123,11 @@ static inline NSString * NSStringFromAFOAuthSignatureMethod(AFOAuthSignatureMeth
 }
 
 static inline NSString * AFHMACSHA1SignatureWithConsumerSecretAndRequestTokenSecret(NSURLRequest *request, NSString *consumerSecret, NSString *requestTokenSecret, NSStringEncoding stringEncoding) {
-    NSString *secretString = [NSString stringWithFormat:@"%@&%@", consumerSecret, @""];
+    NSString* reqSecret = @"";
+    if (requestTokenSecret != nil) {
+        reqSecret = requestTokenSecret;
+    }
+    NSString *secretString = [NSString stringWithFormat:@"%@&%@", consumerSecret, reqSecret];
     NSData *secretStringData = [secretString dataUsingEncoding:stringEncoding];
     
     NSString *queryString = AFURLEncodedStringFromStringWithEncoding([[[[[request URL] query] componentsSeparatedByString:@"&"] sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)] componentsJoinedByString:@"&"], stringEncoding);
