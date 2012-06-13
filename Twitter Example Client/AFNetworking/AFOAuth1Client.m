@@ -240,10 +240,11 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
                           userAuthorizationPath:(NSString *)userAuthorizationPath
                                     callbackURL:(NSURL *)callbackURL
                                 accessTokenPath:(NSString *)accessTokenPath
+                                   accessMethod:(NSString *)accessMethod
                                         success:(void (^)(AFOAuth1Token *accessToken))success 
                                         failure:(void (^)(NSError *error))failure
 {
-    [self acquireOAuthRequestTokenWithPath:requestTokenPath callback:callbackURL success:^(AFOAuth1Token *requestToken) {
+    [self acquireOAuthRequestTokenWithPath:requestTokenPath callback:callbackURL accessMethod:(NSString *)accessMethod success:^(AFOAuth1Token *requestToken) {
         self.currentRequestToken = requestToken;
         [[NSNotificationCenter defaultCenter] addObserverForName:kAFApplicationLaunchedWithURLNotification object:nil queue:self.operationQueue usingBlock:^(NSNotification *notification) {
             
@@ -254,7 +255,7 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
             
             NSLog(@"verifier %@", self.currentRequestToken.verifier);
             
-            [self acquireOAuthAccessTokenWithPath:accessTokenPath requestToken:self.currentRequestToken success:^(AFOAuth1Token * accessToken) {
+            [self acquireOAuthAccessTokenWithPath:accessTokenPath requestToken:self.currentRequestToken accessMethod:(NSString *)accessMethod success:^(AFOAuth1Token * accessToken) {
                 if (success) {
                     success(accessToken);
                 }
@@ -275,6 +276,7 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
 
 - (void)acquireOAuthRequestTokenWithPath:(NSString *)path
                                 callback:(NSURL *)callbackURL
+                            accessMethod:(NSString *)accessMethod
                                  success:(void (^)(AFOAuth1Token *requestToken))success 
                                  failure:(void (^)(NSError *error))failure
 {
@@ -294,14 +296,11 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
     
     [parameters setValue:kAFOAuth1Version forKey:@"oauth_version"];
     
-//    NSString *callbackString = AFURLEncodedStringFromStringWithEncoding([callbackURL absoluteString], self.stringEncoding);
-//    [parameters setValue:[callbackString stringByReplacingOccurrencesOfString:@"%" withString:@"%25"] forKey:@"oauth_callback"];
-    
     [parameters setValue:[callbackURL absoluteString] forKey:@"oauth_callback"];
     
     
     NSMutableURLRequest *mutableRequest = [self requestWithMethod:@"GET" path:path parameters:parameters];
-    [mutableRequest setHTTPMethod:@"POST"];
+    [mutableRequest setHTTPMethod:accessMethod];
     
     [parameters setValue:AFSignatureUsingMethodWithSignatureWithConsumerSecretAndRequestTokenSecret(mutableRequest, self.signatureMethod, self.secret, nil, self.stringEncoding) forKey:@"oauth_signature"];
     
@@ -321,23 +320,35 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
     
     [self setDefaultHeader:@"Authorization" value:oauthString];
     
-    [self postPath:path parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
+    void (^success_block)(AFHTTPRequestOperation*, id);
+    void (^failure_block)(AFHTTPRequestOperation*, id);
+    
+    success_block = ^(AFHTTPRequestOperation *operation, id responseObject) {
         NSLog(@"Success: %@", operation.responseString);
         
         if (success) {
             AFOAuth1Token *requestToken = [[[AFOAuth1Token alloc] initWithQueryString:operation.responseString] autorelease];
             success(requestToken);
         }
-    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+    };
+    
+    failure_block = ^(AFHTTPRequestOperation *operation, NSError *error) {
         NSLog(@"Failure: %@", operation.responseString);
         if (failure) {
             failure(error);
         }
-    }];
+    };
+    
+    if ([accessMethod isEqualToString:@"POST"]) {
+        [self postPath:path parameters:nil success:success_block failure:failure_block];
+    } else {
+        [self getPath:path parameters:parameters success:success_block failure:failure_block];
+    }
 }
 
 - (void)acquireOAuthAccessTokenWithPath:(NSString *)path
                            requestToken:(AFOAuth1Token *)requestToken
+                           accessMethod:(NSString *)accessMethod
                                 success:(void (^)(AFOAuth1Token *accessToken))success 
                                 failure:(void (^)(NSError *error))failure
 {
@@ -346,36 +357,58 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
     NSMutableDictionary *parameters = [NSMutableDictionary dictionary];
     [parameters setValue:self.key forKey:@"oauth_consumer_key"];
     [parameters setValue:requestToken.key forKey:@"oauth_token"];
+    [parameters setValue:NSStringFromAFOAuthSignatureMethod(self.signatureMethod) forKey:@"oauth_signature_method"];
+    [parameters setValue:[[NSNumber numberWithInteger:floorf([[NSDate date] timeIntervalSince1970])] stringValue] forKey:@"oauth_timestamp"];
+    [parameters setValue:AFNonceWithPath(path) forKey:@"oauth_nonce"];
+    [parameters setValue:kAFOAuth1Version forKey:@"oauth_version"];
     [parameters setValue:requestToken.verifier forKey:@"oauth_verifier"];
     
     if (self.realm) {
         [parameters setValue:self.realm forKey:@"realm"];
     }
     
-    [parameters setValue:AFNonceWithPath(path) forKey:@"oauth_nonce"];
-    [parameters setValue:[[NSNumber numberWithInteger:floorf([[NSDate date] timeIntervalSince1970])] stringValue] forKey:@"oauth_timestamp"];
+    NSMutableURLRequest *mutableRequest = [self requestWithMethod:accessMethod path:path parameters:parameters];
+    [mutableRequest setHTTPMethod:accessMethod];
+    [parameters setValue:AFSignatureUsingMethodWithSignatureWithConsumerSecretAndRequestTokenSecret(mutableRequest, self.signatureMethod, self.secret, requestToken.secret, self.stringEncoding) forKey:@"oauth_signature"];
     
-    [parameters setValue:NSStringFromAFOAuthSignatureMethod(self.signatureMethod) forKey:@"oauth_signature_method"];
-    [parameters setValue:AFSignatureUsingMethodWithSignatureWithConsumerSecretAndRequestTokenSecret([self requestWithMethod:@"POST" path:path parameters:parameters], self.signatureMethod, self.secret, requestToken.secret, self.stringEncoding) forKey:@"oauth_signature"];
+    NSArray *sortedComponents = [[AFQueryStringFromParametersWithEncoding(parameters, self.stringEncoding) componentsSeparatedByString:@"&"] sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)];
+    NSMutableArray *mutableComponents = [NSMutableArray array];
+    for (NSString *component in sortedComponents) {
+        NSArray *subcomponents = [component componentsSeparatedByString:@"="];
+        [mutableComponents addObject:[NSString stringWithFormat:@"%@=\"%@\"", [subcomponents objectAtIndex:0], [subcomponents objectAtIndex:1]]];
+    }
     
-    [parameters setValue:kAFOAuth1Version forKey:@"oauth_version"];
+    NSString *oauthString = [NSString stringWithFormat:@"OAuth %@", [mutableComponents componentsJoinedByString:@", "]];
     
-    [self setDefaultHeader:@"Authorization" value:AFQueryStringFromParametersWithEncoding(parameters, self.stringEncoding)];
+    NSLog(@"OAuth: %@", oauthString);
     
-    [self postPath:path parameters:parameters success:^(AFHTTPRequestOperation *operation, id responseObject) {
+    [self setDefaultHeader:@"Authorization" value:oauthString];
+    
+    void (^success_block)(AFHTTPRequestOperation*, id);
+    void (^failure_block)(AFHTTPRequestOperation*, id);
+    
+    success_block = ^(AFHTTPRequestOperation *operation, id responseObject) {
         NSLog(@"Success: %@", operation.responseString);
         
         if (success) {
             AFOAuth1Token *accessToken = [[[AFOAuth1Token alloc] initWithQueryString:operation.responseString] autorelease];
             success(accessToken);
         }
-    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+    };
+    
+    failure_block = ^(AFHTTPRequestOperation *operation, NSError *error) {
         NSLog(@"Failure: %@", error);
         
         if (failure) {
             failure(error);
         }
-    }];
+    };
+    
+    if ([accessMethod isEqualToString:@"POST"]) {
+        [self postPath:path parameters:parameters success:success_block failure:failure_block];
+    } else {
+        [self getPath:path parameters:parameters success:success_block failure:failure_block];
+    }
 }
 
 - (NSMutableURLRequest *)requestWithMethod:(NSString *)method path:(NSString *)path parameters:(NSDictionary *)parameters {
