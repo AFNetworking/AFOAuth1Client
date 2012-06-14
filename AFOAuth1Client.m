@@ -104,7 +104,7 @@ NSString * const kAFOAuth1Version = @"1.0";
 NSString * const kAFApplicationLaunchedWithURLNotification = @"kAFApplicationLaunchedWithURLNotification";
 
 // TODO: the nonce is not path specific, so fix the signature:
-static inline NSString * AFNonceWithPath(NSString *path) {
+static inline NSString * AFNounce() {
     CFUUIDRef uuid = CFUUIDCreate(NULL);
     CFStringRef string = CFUUIDCreateString(NULL, uuid);
     CFRelease(uuid);
@@ -201,6 +201,12 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
 @property (readwrite, nonatomic, copy) NSString *serviceProviderIdentifier;
 @property (strong, readwrite, nonatomic) AFOAuth1Token *currentRequestToken;
 
+- (void) signCallPerAuthHeaderWithPath:(NSString *)path 
+                         andParameters:(NSDictionary *)parameters 
+                             andMethod:(NSString *)method ;
+- (NSDictionary *) signCallWithHttpGetWithPath:(NSString *)path 
+                                 andParameters:(NSDictionary *)parameters 
+                                     andMethod:(NSString *)method ;
 @end
 
 @implementation AFOAuth1Client
@@ -210,6 +216,8 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
 @synthesize signatureMethod = _signatureMethod;
 @synthesize realm = _realm;
 @synthesize currentRequestToken = _currentRequestToken;
+@synthesize accessToken = _accessToken;
+@synthesize oauthAccessMethod = _oauthAccessMethod;
 
 - (id)initWithBaseURL:(NSURL *)url
                   key:(NSString *)clientID
@@ -224,6 +232,10 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
     self.secret = secret;
     
     self.serviceProviderIdentifier = [self.baseURL host];
+    
+    self.accessToken = nil;
+    
+    self.oauthAccessMethod = @"HEADER";
     
     return self;
 }
@@ -289,7 +301,7 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
         [parameters setValue:self.realm forKey:@"realm"];
     }
     
-    [parameters setValue:AFNonceWithPath(path) forKey:@"oauth_nonce"];
+    [parameters setValue:AFNounce() forKey:@"oauth_nonce"];
     [parameters setValue:[[NSNumber numberWithInteger:floorf([[NSDate date] timeIntervalSince1970])] stringValue] forKey:@"oauth_timestamp"];
     
     [parameters setValue:NSStringFromAFOAuthSignatureMethod(self.signatureMethod) forKey:@"oauth_signature_method"];
@@ -359,7 +371,7 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
     [parameters setValue:requestToken.key forKey:@"oauth_token"];
     [parameters setValue:NSStringFromAFOAuthSignatureMethod(self.signatureMethod) forKey:@"oauth_signature_method"];
     [parameters setValue:[[NSNumber numberWithInteger:floorf([[NSDate date] timeIntervalSince1970])] stringValue] forKey:@"oauth_timestamp"];
-    [parameters setValue:AFNonceWithPath(path) forKey:@"oauth_nonce"];
+    [parameters setValue:AFNounce() forKey:@"oauth_nonce"];
     [parameters setValue:kAFOAuth1Version forKey:@"oauth_version"];
     [parameters setValue:requestToken.verifier forKey:@"oauth_verifier"];
     
@@ -392,6 +404,7 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
         
         if (success) {
             AFOAuth1Token *accessToken = [[[AFOAuth1Token alloc] initWithQueryString:operation.responseString] autorelease];
+            self.accessToken = accessToken;
             success(accessToken);
         }
     };
@@ -415,6 +428,126 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
     NSMutableURLRequest *request = [super requestWithMethod:method path:path parameters:parameters];
     [request setHTTPShouldHandleCookies:NO];
     return  request;
+}
+
+#pragma mark -
+
+- (void)getPath:(NSString *)path 
+     parameters:(NSDictionary *)parameters 
+        success:(void (^)(AFHTTPRequestOperation *operation, id responseObject))success
+        failure:(void (^)(AFHTTPRequestOperation *operation, NSError *error))failure
+{
+    if (self.accessToken) {
+        if ([self.oauthAccessMethod isEqualToString:@"GET"])
+            parameters = [self signCallWithHttpGetWithPath:path andParameters:parameters andMethod:@"GET"];
+        else 
+            [self signCallPerAuthHeaderWithPath:path andParameters:parameters andMethod:@"GET"];
+    }
+    [super getPath:path parameters:parameters success:success failure:failure];
+	
+}
+
+- (void)postPath:(NSString *)path 
+      parameters:(NSDictionary *)parameters 
+         success:(void (^)(AFHTTPRequestOperation *operation, id responseObject))success
+         failure:(void (^)(AFHTTPRequestOperation *operation, NSError *error))failure
+{
+    if (self.accessToken) {
+        if ([self.oauthAccessMethod isEqualToString:@"GET"])
+            parameters = [self signCallWithHttpGetWithPath:path andParameters:parameters andMethod:@"POST"];
+        else 
+            [self signCallPerAuthHeaderWithPath:path andParameters:parameters andMethod:@"POST"];
+    }
+    [super postPath:path parameters:parameters success:success failure:failure];
+}
+
+- (void)putPath:(NSString *)path 
+     parameters:(NSDictionary *)parameters 
+        success:(void (^)(AFHTTPRequestOperation *operation, id responseObject))success
+        failure:(void (^)(AFHTTPRequestOperation *operation, NSError *error))failure
+{
+    if (self.accessToken) {
+        if ([self.oauthAccessMethod isEqualToString:@"GET"])
+            parameters = [self signCallWithHttpGetWithPath:path andParameters:parameters andMethod:@"PUT"];
+        else 
+            [self signCallPerAuthHeaderWithPath:path andParameters:parameters andMethod:@"PUT"];
+    }
+    [self putPath:path parameters:parameters success:success failure:failure];
+}
+
+- (void)deletePath:(NSString *)path 
+        parameters:(NSDictionary *)parameters 
+           success:(void (^)(AFHTTPRequestOperation *operation, id responseObject))success
+           failure:(void (^)(AFHTTPRequestOperation *operation, NSError *error))failure
+{
+    if (self.accessToken) {
+        if ([self.oauthAccessMethod isEqualToString:@"GET"])
+            parameters = [self signCallWithHttpGetWithPath:path andParameters:parameters andMethod:@"DELETE"];
+        else 
+            [self signCallPerAuthHeaderWithPath:path andParameters:parameters andMethod:@"DELETE"];
+    }
+    [self deletePath:path parameters:parameters success:success failure:failure];
+}
+
+- (void)patchPath:(NSString *)path 
+       parameters:(NSDictionary *)parameters 
+          success:(void (^)(AFHTTPRequestOperation *operation, id responseObject))success
+          failure:(void (^)(AFHTTPRequestOperation *operation, NSError *error))failure
+{
+    if (self.accessToken) {
+        if ([self.oauthAccessMethod isEqualToString:@"GET"])
+            parameters = [self signCallWithHttpGetWithPath:path andParameters:parameters andMethod:@"PATCH"];
+        else 
+            [self signCallPerAuthHeaderWithPath:path andParameters:parameters andMethod:@"PATCH"];
+    }
+    [self patchPath:path parameters:parameters success:success failure:failure];
+}
+
+- (NSMutableDictionary *)paramsWithOAuthFromParams:(NSDictionary *)parameters {
+    NSMutableDictionary *params = nil;
+    if (parameters)
+        params = [parameters mutableCopy];
+    else {
+        params = [NSMutableDictionary dictionaryWithCapacity:7];
+    }
+    [params setValue:self.key forKey:@"oauth_consumer_key"];
+    [params setValue:self.accessToken.key forKey:@"oauth_token"];
+    [params setValue:NSStringFromAFOAuthSignatureMethod(self.signatureMethod) forKey:@"oauth_signature_method"];
+    [params setValue:[[NSNumber numberWithInteger:floorf([[NSDate date] timeIntervalSince1970])] stringValue] forKey:@"oauth_timestamp"];
+    [params setValue:AFNounce() forKey:@"oauth_nonce"];
+    [params setValue:kAFOAuth1Version forKey:@"oauth_version"];
+    return params;
+}
+
+- (void) signCallPerAuthHeaderWithPath:(NSString *)path usingParameters:(NSMutableDictionary *)parameters andMethod:(NSString *)method {
+    NSMutableURLRequest *request = [self requestWithMethod:@"GET" path:path parameters:parameters];
+    [request setHTTPMethod:method];
+    [parameters setValue:AFSignatureUsingMethodWithSignatureWithConsumerSecretAndRequestTokenSecret(request, self.signatureMethod, self.secret, self.accessToken.secret, self.stringEncoding) forKey:@"oauth_signature"];
+    
+    
+    NSArray *sortedComponents = [[AFQueryStringFromParametersWithEncoding(parameters, self.stringEncoding) componentsSeparatedByString:@"&"] sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)];
+    NSMutableArray *mutableComponents = [NSMutableArray array];
+    for (NSString *component in sortedComponents) {
+        NSArray *subcomponents = [component componentsSeparatedByString:@"="];
+        [mutableComponents addObject:[NSString stringWithFormat:@"%@=\"%@\"", [subcomponents objectAtIndex:0], [subcomponents objectAtIndex:1]]];
+    }
+    
+    NSString *oauthString = [NSString stringWithFormat:@"OAuth %@", [mutableComponents componentsJoinedByString:@", "]];
+    
+    NSLog(@"OAuth: %@", oauthString);
+    
+     [self setDefaultHeader:@"Authorization" value:oauthString];
+}
+
+- (void) signCallPerAuthHeaderWithPath:(NSString *)path andParameters:(NSDictionary *)parameters andMethod:(NSString *)method {
+    NSMutableDictionary *params = [self paramsWithOAuthFromParams:parameters];
+    [self signCallPerAuthHeaderWithPath:path usingParameters:params andMethod:method];
+}
+
+- (NSDictionary *) signCallWithHttpGetWithPath:(NSString *)path andParameters:(NSDictionary *)parameters andMethod:(NSString *)method {
+    NSMutableDictionary *params = [self paramsWithOAuthFromParams:parameters];
+    [self signCallPerAuthHeaderWithPath:path usingParameters:params andMethod:method];
+    return params;
 }
 
 @end
