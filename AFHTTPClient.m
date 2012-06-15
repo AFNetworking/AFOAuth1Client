@@ -32,7 +32,17 @@
 #import <UIKit/UIKit.h>
 #endif
 
-static NSString * const kAFMultipartFormLineDelimiter = @"\r\n"; // CRLF
+#ifdef _SYSTEMCONFIGURATION_H
+#import <SystemConfiguration/SystemConfiguration.h>
+#import <netinet/in.h>
+#import <netinet6/in6.h>
+#import <arpa/inet.h>
+#import <ifaddrs.h>
+#import <netdb.h>
+#endif
+
+NSString * const AFNetworkingReachabilityDidChangeNotification = @"com.alamofire.networking.reachability.change";
+
 static NSString * const kAFMultipartFormBoundary = @"Boundary+0xAbCdEfGbOuNdArY";
 
 @interface AFMultipartFormData : NSObject <AFMultipartFormData> {
@@ -49,10 +59,19 @@ static NSString * const kAFMultipartFormBoundary = @"Boundary+0xAbCdEfGbOuNdArY"
 
 #pragma mark -
 
+#ifdef _SYSTEMCONFIGURATION_H
+typedef SCNetworkReachabilityRef AFNetworkReachabilityRef;
+typedef void (^AFNetworkReachabilityStatusBlock)(AFNetworkReachabilityStatus status);
+#else
+typedef id AFNetworkReachabilityRef;
+#endif
+
+typedef void (^AFCompletionBlock)(void);
+
 static NSUInteger const kAFHTTPClientDefaultMaxConcurrentOperationCount = 4;
 
-NSString * AFBase64EncodedStringFromString(NSString *string) {
-    NSData *data = [NSData dataWithBytes:[string UTF8String] length:[string length]];
+static NSString * AFBase64EncodedStringFromString(NSString *string) {
+    NSData *data = [NSData dataWithBytes:[string UTF8String] length:[string lengthOfBytesUsingEncoding:NSUTF8StringEncoding]];
     NSUInteger length = [data length];
     NSMutableData *mutableData = [NSMutableData dataWithLength:((length + 2) / 3) * 4];
     
@@ -81,25 +100,108 @@ NSString * AFBase64EncodedStringFromString(NSString *string) {
 }
 
 NSString * AFURLEncodedStringFromStringWithEncoding(NSString *string, NSStringEncoding encoding) {
-    static NSString * const kAFLegalCharactersToBeEscaped = @"?!@#$^&%*+,:;='\"`<>()[]{}/\\|~ ";
+    static NSString * const kAFLegalCharactersToBeEscaped = @"?!@#$^&%*+=,:;'\"`<>()[]{}/\\|~ ";
     
-    // Following the suggestion in documentation for `CFURLCreateStringByAddingPercentEscapes` to "pre-process" URL strings (using stringByReplacingPercentEscapesUsingEncoding) with unpredictable sequences that may already contain percent escapes.
-	return [(NSString *)CFURLCreateStringByAddingPercentEscapes(kCFAllocatorDefault, (CFStringRef)[string stringByReplacingPercentEscapesUsingEncoding:encoding], NULL, (CFStringRef)kAFLegalCharactersToBeEscaped, CFStringConvertNSStringEncodingToEncoding(encoding)) autorelease];
+	return [(NSString *)CFURLCreateStringByAddingPercentEscapes(kCFAllocatorDefault, (CFStringRef)string, NULL, (CFStringRef)kAFLegalCharactersToBeEscaped, CFStringConvertNSStringEncodingToEncoding(encoding)) autorelease];
 }
 
-NSString * AFQueryStringFromParametersWithEncoding(NSDictionary *parameters, NSStringEncoding encoding) {
-    NSMutableArray *mutableParameterComponents = [NSMutableArray array];
-    for (id key in [parameters allKeys]) {
-        NSString *component = [NSString stringWithFormat:@"%@=%@", AFURLEncodedStringFromStringWithEncoding([key description], encoding), AFURLEncodedStringFromStringWithEncoding([[parameters valueForKey:key] description], encoding)];
-        [mutableParameterComponents addObject:component];
+#pragma mark -
+
+@interface AFQueryStringComponent : NSObject {
+@private
+    NSString *_key;
+    NSString *_value;
+}
+
+@property (readwrite, nonatomic, retain) id key;
+@property (readwrite, nonatomic, retain) id value;
+
+- (id)initWithKey:(id)key value:(id)value; 
+- (NSString *)URLEncodedStringValueWithEncoding:(NSStringEncoding)stringEncoding;
+
+@end
+
+@implementation AFQueryStringComponent 
+@synthesize key = _key;
+@synthesize value = _value;
+
+- (id)initWithKey:(id)key value:(id)value {
+    self = [super init];
+    if (!self) {
+        return nil;
     }
     
-    return [mutableParameterComponents componentsJoinedByString:@"&"];
+    self.key = key;
+    self.value = value;
+    
+    return self;
+}
+
+- (void)dealloc {
+    [_key release];
+    [_value release];
+    [super dealloc];
+}
+
+- (NSString *)URLEncodedStringValueWithEncoding:(NSStringEncoding)stringEncoding {
+    return [NSString stringWithFormat:@"%@=%@", self.key, AFURLEncodedStringFromStringWithEncoding([self.value description], stringEncoding)];
+}
+
+@end
+
+#pragma mark -
+
+extern NSArray * AFQueryStringComponentsFromKeyAndValue(NSString *key, id value);
+extern NSArray * AFQueryStringComponentsFromKeyAndDictionaryValue(NSString *key, NSDictionary *value);
+extern NSArray * AFQueryStringComponentsFromKeyAndArrayValue(NSString *key, NSArray *value);
+
+NSString * AFQueryStringFromParametersWithEncoding(NSDictionary *parameters, NSStringEncoding stringEncoding) {
+    NSMutableArray *mutableComponents = [NSMutableArray array];
+    for (AFQueryStringComponent *component in AFQueryStringComponentsFromKeyAndValue(nil, parameters)) {
+        [mutableComponents addObject:[component URLEncodedStringValueWithEncoding:stringEncoding]];
+    }
+    
+    return [mutableComponents componentsJoinedByString:@"&"];
+}
+
+NSArray * AFQueryStringComponentsFromKeyAndValue(NSString *key, id value) {
+    NSMutableArray *mutableQueryStringComponents = [NSMutableArray array];
+    
+    if([value isKindOfClass:[NSDictionary class]]) {
+        [mutableQueryStringComponents addObjectsFromArray:AFQueryStringComponentsFromKeyAndDictionaryValue(key, value)];
+    } else if([value isKindOfClass:[NSArray class]]) {
+        [mutableQueryStringComponents addObjectsFromArray:AFQueryStringComponentsFromKeyAndArrayValue(key, value)];
+    } else {
+        [mutableQueryStringComponents addObject:[[[AFQueryStringComponent alloc] initWithKey:key value:value] autorelease]];
+    } 
+    
+    return mutableQueryStringComponents;
+}
+
+NSArray * AFQueryStringComponentsFromKeyAndDictionaryValue(NSString *key, NSDictionary *value){
+    NSMutableArray *mutableQueryStringComponents = [NSMutableArray array];
+    
+    [value enumerateKeysAndObjectsUsingBlock:^(id nestedKey, id nestedValue, BOOL *stop) {
+        [mutableQueryStringComponents addObjectsFromArray:AFQueryStringComponentsFromKeyAndValue((key ? [NSString stringWithFormat:@"%@[%@]", key, nestedKey] : nestedKey), nestedValue)];
+    }];
+    
+    return mutableQueryStringComponents;
+}
+
+NSArray * AFQueryStringComponentsFromKeyAndArrayValue(NSString *key, NSArray *value) {
+    NSMutableArray *mutableQueryStringComponents = [NSMutableArray array];
+    
+    [value enumerateObjectsUsingBlock:^(id nestedValue, NSUInteger idx, BOOL *stop) {
+        [mutableQueryStringComponents addObjectsFromArray:AFQueryStringComponentsFromKeyAndValue([NSString stringWithFormat:@"%@[]", key], nestedValue)];
+    }];
+    
+    return mutableQueryStringComponents;
 }
 
 static NSString * AFJSONStringFromParameters(NSDictionary *parameters) {
     NSError *error = nil;
     NSData *JSONData = AFJSONEncode(parameters, &error);
+    
     if (!error) {
         return [[[NSString alloc] initWithData:JSONData encoding:NSUTF8StringEncoding] autorelease];
     } else {
@@ -124,6 +226,16 @@ static NSString * AFPropertyListStringFromParameters(NSDictionary *parameters) {
 @property (readwrite, nonatomic, retain) NSMutableArray *registeredHTTPOperationClassNames;
 @property (readwrite, nonatomic, retain) NSMutableDictionary *defaultHeaders;
 @property (readwrite, nonatomic, retain) NSOperationQueue *operationQueue;
+#ifdef _SYSTEMCONFIGURATION_H
+@property (readwrite, nonatomic, assign) AFNetworkReachabilityRef networkReachability;
+@property (readwrite, nonatomic, assign) AFNetworkReachabilityStatus networkReachabilityStatus;
+@property (readwrite, nonatomic, copy) AFNetworkReachabilityStatusBlock networkReachabilityStatusBlock;
+#endif
+
+#ifdef _SYSTEMCONFIGURATION_H
+- (void)startMonitoringNetworkReachability;
+- (void)stopMonitoringNetworkReachability;
+#endif
 @end
 
 @implementation AFHTTPClient
@@ -133,6 +245,11 @@ static NSString * AFPropertyListStringFromParameters(NSDictionary *parameters) {
 @synthesize registeredHTTPOperationClassNames = _registeredHTTPOperationClassNames;
 @synthesize defaultHeaders = _defaultHeaders;
 @synthesize operationQueue = _operationQueue;
+#ifdef _SYSTEMCONFIGURATION_H
+@synthesize networkReachability = _networkReachability;
+@synthesize networkReachabilityStatus = _networkReachabilityStatus;
+@synthesize networkReachabilityStatusBlock = _networkReachabilityStatusBlock;
+#endif
 
 + (AFHTTPClient *)clientWithBaseURL:(NSURL *)url {
     return [[[self alloc] initWithBaseURL:url] autorelease];
@@ -167,6 +284,11 @@ static NSString * AFPropertyListStringFromParameters(NSDictionary *parameters) {
     [self setDefaultHeader:@"User-Agent" value:[NSString stringWithFormat:@"%@/%@ (%@)", [[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString *)kCFBundleIdentifierKey], [[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString *)kCFBundleVersionKey], @"unknown"]];
 #endif
     
+#ifdef _SYSTEMCONFIGURATION_H
+    self.networkReachabilityStatus = AFNetworkReachabilityStatusUnknown;
+    [self startMonitoringNetworkReachability];
+#endif
+    
     self.operationQueue = [[[NSOperationQueue alloc] init] autorelease];
 	[self.operationQueue setMaxConcurrentOperationCount:kAFHTTPClientDefaultMaxConcurrentOperationCount];
     
@@ -174,12 +296,115 @@ static NSString * AFPropertyListStringFromParameters(NSDictionary *parameters) {
 }
 
 - (void)dealloc {
+#ifdef _SYSTEMCONFIGURATION_H
+    [self stopMonitoringNetworkReachability];
+    [_networkReachabilityStatusBlock release];
+#endif
+    
     [_baseURL release];
     [_registeredHTTPOperationClassNames release];
     [_defaultHeaders release];
     [_operationQueue release];
+    
     [super dealloc];
 }
+
+- (NSString *)description {
+    return [NSString stringWithFormat:@"<%@: %p, baseURL: %@, defaultHeaders: %@, registeredOperationClasses: %@, operationQueue: %@>", NSStringFromClass([self class]), self, [self.baseURL absoluteString], self.defaultHeaders, self.registeredHTTPOperationClassNames, self.operationQueue];
+}
+
+#pragma mark -
+
+#ifdef _SYSTEMCONFIGURATION_H
+static BOOL AFURLHostIsIPAddress(NSURL *url) {
+    struct sockaddr_in sa_in;
+    struct sockaddr_in6 sa_in6;
+    
+    return [url host] && (inet_pton(AF_INET, [[url host] UTF8String], &sa_in) == 1 || inet_pton(AF_INET6, [[url host] UTF8String], &sa_in6) == 1);
+}
+
+static AFNetworkReachabilityStatus AFNetworkReachabilityStatusForFlags(SCNetworkReachabilityFlags flags) {
+    BOOL isReachable = ((flags & kSCNetworkReachabilityFlagsReachable) != 0);
+    BOOL needsConnection = ((flags & kSCNetworkReachabilityFlagsConnectionRequired) != 0);
+    BOOL isNetworkReachable = (isReachable && !needsConnection);
+    
+    AFNetworkReachabilityStatus status = AFNetworkReachabilityStatusUnknown;
+    if(isNetworkReachable == NO){
+        status = AFNetworkReachabilityStatusNotReachable;
+    }
+#if	TARGET_OS_IPHONE
+    else if((flags & kSCNetworkReachabilityFlagsIsWWAN) != 0){
+        status = AFNetworkReachabilityStatusReachableViaWWAN;
+    }
+#endif
+    else {
+        status = AFNetworkReachabilityStatusReachableViaWiFi;
+    }
+    
+    return status;
+}
+
+static void AFNetworkReachabilityCallback(SCNetworkReachabilityRef __unused target, SCNetworkReachabilityFlags flags, void *info) {    
+    AFNetworkReachabilityStatus status = AFNetworkReachabilityStatusForFlags(flags);
+    AFNetworkReachabilityStatusBlock block = (AFNetworkReachabilityStatusBlock)info;
+    if (block) {
+        block(status);
+    }
+        
+    [[NSNotificationCenter defaultCenter] postNotificationName:AFNetworkingReachabilityDidChangeNotification object:[NSNumber numberWithInt:status]];
+}
+
+static const void * AFNetworkReachabilityRetainCallback(const void *info) {
+    return [(AFNetworkReachabilityStatusBlock)info copy];
+}
+
+static void AFNetworkReachabilityReleaseCallback(const void *info) {
+    [(AFNetworkReachabilityStatusBlock)info release];
+}
+
+- (void)startMonitoringNetworkReachability {
+    [self stopMonitoringNetworkReachability];
+    
+    if (!self.baseURL) {
+        return;
+    }
+
+    self.networkReachability = SCNetworkReachabilityCreateWithName(kCFAllocatorDefault, [[self.baseURL host] UTF8String]);
+
+    AFNetworkReachabilityStatusBlock callback = ^(AFNetworkReachabilityStatus status){
+        self.networkReachabilityStatus = status;
+        if (self.networkReachabilityStatusBlock) {
+            self.networkReachabilityStatusBlock(status);
+        }
+    };
+    
+    SCNetworkReachabilityContext context = {0, callback, AFNetworkReachabilityRetainCallback, AFNetworkReachabilityReleaseCallback, NULL};
+    SCNetworkReachabilitySetCallback(self.networkReachability, AFNetworkReachabilityCallback, &context);
+    SCNetworkReachabilityScheduleWithRunLoop(self.networkReachability, CFRunLoopGetMain(), (CFStringRef)NSRunLoopCommonModes);
+    
+    /* Network reachability monitoring does not establish a baseline for IP addresses as it does for hostnames, so if the base URL host is an IP address, the initial reachability callback is manually triggered.
+     */
+    if (AFURLHostIsIPAddress(self.baseURL)) {
+        SCNetworkReachabilityFlags flags;
+        SCNetworkReachabilityGetFlags(self.networkReachability, &flags);
+        dispatch_async(dispatch_get_main_queue(), ^{
+            AFNetworkReachabilityStatus status = AFNetworkReachabilityStatusForFlags(flags);
+            callback(status);
+        });
+    }
+}
+
+- (void)stopMonitoringNetworkReachability {
+    if (_networkReachability) {
+        SCNetworkReachabilityUnscheduleFromRunLoop(_networkReachability, CFRunLoopGetMain(), (CFStringRef)NSRunLoopCommonModes);
+        CFRelease(_networkReachability);
+    }
+}
+
+- (void)setReachabilityStatusChangeBlock:(void (^)(AFNetworkReachabilityStatus status))block {
+    self.networkReachabilityStatusBlock = block;
+}
+#endif
 
 #pragma mark -
 
@@ -235,7 +460,7 @@ static NSString * AFPropertyListStringFromParameters(NSDictionary *parameters) {
     [request setAllHTTPHeaderFields:self.defaultHeaders];
 	
     if (parameters) {        
-        if ([method isEqualToString:@"GET"]) {
+        if ([method isEqualToString:@"GET"] || [method isEqualToString:@"HEAD"] || [method isEqualToString:@"DELETE"]) {
             url = [NSURL URLWithString:[[url absoluteString] stringByAppendingFormat:[path rangeOfString:@"?"].location == NSNotFound ? @"?%@" : @"&%@", AFQueryStringFromParametersWithEncoding(parameters, self.stringEncoding)]];
             [request setURL:url];
         } else {
@@ -265,29 +490,22 @@ static NSString * AFPropertyListStringFromParameters(NSDictionary *parameters) {
                                              parameters:(NSDictionary *)parameters
                               constructingBodyWithBlock:(void (^)(id <AFMultipartFormData>formData))block
 {
-    if (!([method isEqualToString:@"POST"] || [method isEqualToString:@"PUT"] || [method isEqualToString:@"DELETE"])) {
-        [NSException raise:@"Invalid HTTP Method" format:@"%@ is not supported for multipart form requests; must be either POST, PUT, or DELETE", method];
-        return nil;
-    }
-    
     NSMutableURLRequest *request = [self requestWithMethod:method path:path parameters:nil];
     __block AFMultipartFormData *formData = [[AFMultipartFormData alloc] initWithStringEncoding:self.stringEncoding];
     
-    id key = nil;
-	NSEnumerator *enumerator = [parameters keyEnumerator];
-	while ((key = [enumerator nextObject])) {
-        id value = [parameters valueForKey:key];
+    for (AFQueryStringComponent *component in AFQueryStringComponentsFromKeyAndValue(nil, parameters)) {
         NSData *data = nil;
-        
-        if ([value isKindOfClass:[NSData class]]) {
-            data = value;
+        if ([component.value isKindOfClass:[NSData class]]) {
+            data = component.value;
         } else {
-            data = [[value description] dataUsingEncoding:self.stringEncoding];
+            data = [[component.value description] dataUsingEncoding:self.stringEncoding];
         }
         
-        [formData appendPartWithFormData:data name:[key description]];
+        if (data) {
+            [formData appendPartWithFormData:data name:[component.key description]];
+        }
     }
-    
+
     if (block) {
         block(formData);
     }
@@ -308,31 +526,92 @@ static NSString * AFPropertyListStringFromParameters(NSDictionary *parameters) {
     NSString *className = nil;
     NSEnumerator *enumerator = [self.registeredHTTPOperationClassNames reverseObjectEnumerator];
     while (!operation && (className = [enumerator nextObject])) {
-        Class class = NSClassFromString(className);
-        if (class && [class canProcessRequest:urlRequest]) {
-            operation = [[(AFHTTPRequestOperation *)[class alloc] initWithRequest:urlRequest] autorelease];
+        Class op_class = NSClassFromString(className);
+        if (op_class && [op_class canProcessRequest:urlRequest]) {
+            operation = [[(AFHTTPRequestOperation *)[op_class alloc] initWithRequest:urlRequest] autorelease];
         }
     }
     
     if (!operation) {
         operation = [[[AFHTTPRequestOperation alloc] initWithRequest:urlRequest] autorelease];
     }
-    
+
     [operation setCompletionBlockWithSuccess:success failure:failure];
-       
+
     return operation;
 }
+
+#pragma mark -
 
 - (void)enqueueHTTPRequestOperation:(AFHTTPRequestOperation *)operation {
     [self.operationQueue addOperation:operation];
 }
 
-- (void)cancelHTTPOperationsWithMethod:(NSString *)method andURL:(NSURL *)url {
-    for (AFHTTPRequestOperation *operation in [self.operationQueue operations]) {
-        if ([[[operation request] HTTPMethod] isEqualToString:method] && [[[operation request] URL] isEqual:url]) {
+- (void)cancelAllHTTPOperationsWithMethod:(NSString *)method path:(NSString *)path {
+    for (NSOperation *operation in [self.operationQueue operations]) {
+        if (![operation isKindOfClass:[AFHTTPRequestOperation class]]) {
+            continue;
+        }
+        
+        if ((!method || [method isEqualToString:[[(AFHTTPRequestOperation *)operation request] HTTPMethod]]) && [path isEqualToString:[[[(AFHTTPRequestOperation *)operation request] URL] path]]) {
             [operation cancel];
         }
     }
+}
+
+- (void)enqueueBatchOfHTTPRequestOperationsWithRequests:(NSArray *)requests 
+                                          progressBlock:(void (^)(NSUInteger numberOfCompletedOperations, NSUInteger totalNumberOfOperations))progressBlock 
+                                        completionBlock:(void (^)(NSArray *operations))completionBlock
+{
+    NSMutableArray *mutableOperations = [NSMutableArray array];
+    for (NSURLRequest *request in requests) {
+        AFHTTPRequestOperation *operation = [self HTTPRequestOperationWithRequest:request success:nil failure:nil];
+        [mutableOperations addObject:operation];
+    }
+    
+    [self enqueueBatchOfHTTPRequestOperations:mutableOperations progressBlock:progressBlock completionBlock:completionBlock];
+}
+
+- (void)enqueueBatchOfHTTPRequestOperations:(NSArray *)operations 
+                              progressBlock:(void (^)(NSUInteger numberOfCompletedOperations, NSUInteger totalNumberOfOperations))progressBlock 
+                            completionBlock:(void (^)(NSArray *operations))completionBlock
+{
+    __block dispatch_group_t dispatchGroup = dispatch_group_create();
+    dispatch_retain(dispatchGroup);
+    NSBlockOperation *batchedOperation = [NSBlockOperation blockOperationWithBlock:^{
+        dispatch_group_notify(dispatchGroup, dispatch_get_main_queue(), ^{
+            if (completionBlock) {
+                completionBlock(operations);
+            }
+        });
+        dispatch_release(dispatchGroup);
+    }];
+
+    NSPredicate *finishedOperationPredicate = [NSPredicate predicateWithFormat:@"isFinished == YES"];
+    
+    for (AFHTTPRequestOperation *operation in operations) {
+        AFCompletionBlock originalCompletionBlock = [[operation.completionBlock copy] autorelease];
+        operation.completionBlock = ^{
+            dispatch_queue_t queue = operation.successCallbackQueue ? operation.successCallbackQueue : dispatch_get_main_queue();
+            dispatch_group_async(dispatchGroup, queue, ^{
+                if (originalCompletionBlock) {
+                    originalCompletionBlock();
+                }
+                
+                if (progressBlock) {
+                    progressBlock([[operations filteredArrayUsingPredicate:finishedOperationPredicate] count], [operations count]);
+                }
+                
+                dispatch_group_leave(dispatchGroup);
+            });
+        };
+        
+        dispatch_group_enter(dispatchGroup);
+        [batchedOperation addDependency:operation];
+        
+        [self enqueueHTTPRequestOperation:operation];
+    }
+    [self.operationQueue addOperation:batchedOperation];
 }
 
 #pragma mark -
@@ -377,20 +656,32 @@ static NSString * AFPropertyListStringFromParameters(NSDictionary *parameters) {
     [self enqueueHTTPRequestOperation:operation];
 }
 
+- (void)patchPath:(NSString *)path 
+       parameters:(NSDictionary *)parameters 
+          success:(void (^)(AFHTTPRequestOperation *operation, id responseObject))success
+          failure:(void (^)(AFHTTPRequestOperation *operation, NSError *error))failure
+{
+    NSURLRequest *request = [self requestWithMethod:@"PATCH" path:path parameters:parameters];
+	AFHTTPRequestOperation *operation = [self HTTPRequestOperationWithRequest:request success:success failure:failure];
+    [self enqueueHTTPRequestOperation:operation];
+}
+
 @end
 
 #pragma mark -
 
+static NSString * const kAFMultipartFormCRLF = @"\r\n";
+
 static inline NSString * AFMultipartFormInitialBoundary() {
-    return [NSString stringWithFormat:@"--%@%@", kAFMultipartFormBoundary, kAFMultipartFormLineDelimiter];
+    return [NSString stringWithFormat:@"--%@%@", kAFMultipartFormBoundary, kAFMultipartFormCRLF];
 }
 
 static inline NSString * AFMultipartFormEncapsulationBoundary() {
-    return [NSString stringWithFormat:@"%@--%@%@", kAFMultipartFormLineDelimiter, kAFMultipartFormBoundary, kAFMultipartFormLineDelimiter];
+    return [NSString stringWithFormat:@"%@--%@%@", kAFMultipartFormCRLF, kAFMultipartFormBoundary, kAFMultipartFormCRLF];
 }
 
 static inline NSString * AFMultipartFormFinalBoundary() {
-    return [NSString stringWithFormat:@"%@--%@--", kAFMultipartFormLineDelimiter, kAFMultipartFormBoundary];
+    return [NSString stringWithFormat:@"%@--%@--%@", kAFMultipartFormCRLF, kAFMultipartFormBoundary, kAFMultipartFormCRLF];
 }
 
 @interface AFMultipartFormData ()
@@ -435,10 +726,10 @@ static inline NSString * AFMultipartFormFinalBoundary() {
     }
     
     for (NSString *field in [headers allKeys]) {
-        [self appendString:[NSString stringWithFormat:@"%@: %@%@", field, [headers valueForKey:field], kAFMultipartFormLineDelimiter]];
+        [self appendString:[NSString stringWithFormat:@"%@: %@%@", field, [headers valueForKey:field], kAFMultipartFormCRLF]];
     }
     
-    [self appendString:kAFMultipartFormLineDelimiter];
+    [self appendString:kAFMultipartFormCRLF];
     [self appendData:body];
 }
 
@@ -451,7 +742,7 @@ static inline NSString * AFMultipartFormFinalBoundary() {
 
 - (void)appendPartWithFileData:(NSData *)data name:(NSString *)name fileName:(NSString *)fileName mimeType:(NSString *)mimeType {    
     NSMutableDictionary *mutableHeaders = [NSMutableDictionary dictionary];
-    [mutableHeaders setValue:[NSString stringWithFormat:@"file; name=\"%@\"; filename=\"%@\"", name, fileName] forKey:@"Content-Disposition"];
+    [mutableHeaders setValue:[NSString stringWithFormat:@"form-data; name=\"%@\"; filename=\"%@\"", name, fileName] forKey:@"Content-Disposition"];
     [mutableHeaders setValue:mimeType forKey:@"Content-Type"];
     
     [self appendPartWithHeaders:mutableHeaders body:data];
@@ -470,12 +761,12 @@ static inline NSString * AFMultipartFormFinalBoundary() {
     }
     
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:fileURL];
-    [request setCachePolicy:NSURLCacheStorageNotAllowed];
+    [request setCachePolicy:NSURLRequestReloadIgnoringLocalCacheData];
     
     NSURLResponse *response = nil;
     NSData *data = [NSURLConnection sendSynchronousRequest:request returningResponse:&response error:error];
     
-    if (response && !error) {
+    if (data && response) {
         [self appendPartWithFileData:data name:name fileName:[response suggestedFilename] mimeType:[response MIMEType]];
         
         return YES;
