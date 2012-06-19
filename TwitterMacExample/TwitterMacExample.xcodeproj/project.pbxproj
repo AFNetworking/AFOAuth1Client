@@ -15,7 +15,6 @@
 		73738ABD14AB9A620009D0D3 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 73738ABB14AB9A620009D0D3 /* MainMenu.xib */; };
 		73738AE314AB9A970009D0D3 /* AFHTTPClient.m in Sources */ = {isa = PBXBuildFile; fileRef = 73738AC514AB9A970009D0D3 /* AFHTTPClient.m */; };
 		73738AE414AB9A970009D0D3 /* AFHTTPRequestOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 73738AC714AB9A970009D0D3 /* AFHTTPRequestOperation.m */; };
-		73738AE514AB9A970009D0D3 /* AFImageCache.m in Sources */ = {isa = PBXBuildFile; fileRef = 73738AC914AB9A970009D0D3 /* AFImageCache.m */; };
 		73738AE614AB9A970009D0D3 /* AFImageRequestOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 73738ACB14AB9A970009D0D3 /* AFImageRequestOperation.m */; };
 		73738AE714AB9A970009D0D3 /* AFJSONRequestOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 73738ACD14AB9A970009D0D3 /* AFJSONRequestOperation.m */; };
 		73738AE814AB9A970009D0D3 /* AFNetworkActivityIndicatorManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 73738AD014AB9A970009D0D3 /* AFNetworkActivityIndicatorManager.m */; };
@@ -46,8 +45,6 @@
 		73738AC514AB9A970009D0D3 /* AFHTTPClient.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AFHTTPClient.m; sourceTree = "<group>"; };
 		73738AC614AB9A970009D0D3 /* AFHTTPRequestOperation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AFHTTPRequestOperation.h; sourceTree = "<group>"; };
 		73738AC714AB9A970009D0D3 /* AFHTTPRequestOperation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AFHTTPRequestOperation.m; sourceTree = "<group>"; };
-		73738AC814AB9A970009D0D3 /* AFImageCache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AFImageCache.h; sourceTree = "<group>"; };
-		73738AC914AB9A970009D0D3 /* AFImageCache.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AFImageCache.m; sourceTree = "<group>"; };
 		73738ACA14AB9A970009D0D3 /* AFImageRequestOperation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AFImageRequestOperation.h; sourceTree = "<group>"; };
 		73738ACB14AB9A970009D0D3 /* AFImageRequestOperation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AFImageRequestOperation.m; sourceTree = "<group>"; };
 		73738ACC14AB9A970009D0D3 /* AFJSONRequestOperation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AFJSONRequestOperation.h; sourceTree = "<group>"; };
@@ -152,8 +149,6 @@
 				73738AC514AB9A970009D0D3 /* AFHTTPClient.m */,
 				73738AC614AB9A970009D0D3 /* AFHTTPRequestOperation.h */,
 				73738AC714AB9A970009D0D3 /* AFHTTPRequestOperation.m */,
-				73738AC814AB9A970009D0D3 /* AFImageCache.h */,
-				73738AC914AB9A970009D0D3 /* AFImageCache.m */,
 				73738ACA14AB9A970009D0D3 /* AFImageRequestOperation.h */,
 				73738ACB14AB9A970009D0D3 /* AFImageRequestOperation.m */,
 				73738ACC14AB9A970009D0D3 /* AFJSONRequestOperation.h */,
@@ -258,7 +253,6 @@
 				73738ABA14AB9A620009D0D3 /* AppDelegate.m in Sources */,
 				73738AE314AB9A970009D0D3 /* AFHTTPClient.m in Sources */,
 				73738AE414AB9A970009D0D3 /* AFHTTPRequestOperation.m in Sources */,
-				73738AE514AB9A970009D0D3 /* AFImageCache.m in Sources */,
 				73738AE614AB9A970009D0D3 /* AFImageRequestOperation.m in Sources */,
 				73738AE714AB9A970009D0D3 /* AFJSONRequestOperation.m in Sources */,
 				73738AE814AB9A970009D0D3 /* AFNetworkActivityIndicatorManager.m in Sources */,
