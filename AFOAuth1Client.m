@@ -143,7 +143,7 @@ static inline BOOL AFQueryStringValueIsTrue(NSString *value) {
 NSString * const kAFOAuth1Version = @"1.0";
 NSString * const kAFApplicationLaunchedWithURLNotification = @"kAFApplicationLaunchedWithURLNotification";
 #if __IPHONE_OS_VERSION_MIN_REQUIRED
-NSString * const kAFApplicationLaunchOptionsURLKey = UIApplicationLaunchOptionsURLKey;
+NSString * const kAFApplicationLaunchOptionsURLKey = @"UIApplicationLaunchOptionsURLKey";
 #else
 NSString * const kAFApplicationLaunchOptionsURLKey = @"NSApplicationLaunchOptionsURLKey";
 #endif
