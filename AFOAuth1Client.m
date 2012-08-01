@@ -102,6 +102,11 @@ static inline BOOL AFQueryStringValueIsTrue(NSString *value) {
 
 NSString * const kAFOAuth1Version = @"1.0";
 NSString * const kAFApplicationLaunchedWithURLNotification = @"kAFApplicationLaunchedWithURLNotification";
+#if __IPHONE_OS_VERSION_MIN_REQUIRED
+NSString * const kAFApplicationLaunchOptionsURLKey = UIApplicationLaunchOptionsURLKey;
+#else
+NSString * const kAFApplicationLaunchOptionsURLKey = @"NSApplicationLaunchOptionsURLKey";
+#endif
 
 // TODO: the nonce is not path specific, so fix the signature:
 static inline NSString * AFNounce() {
@@ -260,7 +265,7 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
         self.currentRequestToken = requestToken;
         [[NSNotificationCenter defaultCenter] addObserverForName:kAFApplicationLaunchedWithURLNotification object:nil queue:self.operationQueue usingBlock:^(NSNotification *notification) {
             
-            NSURL *url = [[notification userInfo] valueForKey:UIApplicationLaunchOptionsURLKey];
+            NSURL *url = [[notification userInfo] valueForKey:kAFApplicationLaunchOptionsURLKey];
             NSLog(@"URL: %@", url);
             
             self.currentRequestToken.verifier = [url AF_getParamNamed:@"oauth_verifier"];
