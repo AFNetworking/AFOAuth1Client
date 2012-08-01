@@ -23,8 +23,48 @@
 #import "AFOAuth1Client.h"
 #import "AFHTTPRequestOperation.h"
 
-#include "hmac.h"
-#include "Base64Transcoder.h"
+#import <CommonCrypto/CommonHMAC.h>
+
+static const char _b64EncTable[64] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+static inline NSString * AFEncodeBase64WithData(NSData *data) {
+    const unsigned char * rawData = [data bytes];
+    char * out;
+    char * result;
+    
+    int lenght = (int)[data length];
+    if (lenght == 0) return nil;
+    
+    result = (char *)calloc((((lenght + 2) / 3) * 4) + 1, sizeof(char));
+    out = result;
+    
+    while (lenght > 2) {
+        *out++ = _b64EncTable[rawData[0] >> 2];
+        *out++ = _b64EncTable[((rawData[0] & 0x03) << 4) + (rawData[1] >> 4)];
+        *out++ = _b64EncTable[((rawData[1] & 0x0f) << 2) + (rawData[2] >> 6)];
+        *out++ = _b64EncTable[rawData[2] & 0x3f];
+        
+        rawData += 3;
+        lenght -= 3;
+    }
+    
+    if (lenght != 0) {
+        *out++ = _b64EncTable[rawData[0] >> 2];
+        if (lenght > 1) {
+            *out++ = _b64EncTable[((rawData[0] & 0x03) << 4) + (rawData[1] >> 4)];
+            *out++ = _b64EncTable[(rawData[1] & 0x0f) << 2];
+            *out++ = '=';
+        } else {
+            *out++ = _b64EncTable[(rawData[0] & 0x03) << 4];
+            *out++ = '=';
+            *out++ = '=';
+        }
+    }
+    
+    *out = '\0';
+    
+    return [NSString stringWithCString:result encoding:NSASCIIStringEncoding];
+}
 
 static inline NSDictionary * AFParametersFromQueryString(NSString *queryString) {
     NSMutableDictionary *parameters = [NSMutableDictionary dictionary];
@@ -139,27 +179,17 @@ static inline NSString * AFHMACSHA1SignatureWithConsumerSecretAndRequestTokenSec
     
     NSString *requestString = [NSString stringWithFormat:@"%@&%@&%@", [request HTTPMethod], AFURLEncodedStringFromStringWithEncoding([[[[request URL] absoluteString] componentsSeparatedByString:@"?"] objectAtIndex:0], stringEncoding), queryString];
     NSData *requestStringData = [requestString dataUsingEncoding:stringEncoding];
-    //    NSData *consumerSecretData = [consumerSecret dataUsingEncoding:stringEncoding];
-    //    NSData *requestTokenSecretData = [requestTokenSecret dataUsingEncoding:stringEncoding];
-    unsigned char result[20];
-    hmac_sha1((unsigned char *)[requestStringData bytes], [requestStringData length], (unsigned char *)[secretStringData bytes], [secretStringData length], result);
     
-    //Base64 Encoding
+    // hmac
+    uint8_t digest[CC_SHA1_DIGEST_LENGTH];
+    CCHmacContext cx;
+    CCHmacInit(&cx, kCCHmacAlgSHA1, [secretStringData bytes], [secretStringData length]);
+    CCHmacUpdate(&cx, [requestStringData bytes], [requestStringData length]);
+    CCHmacFinal(&cx, digest);
     
-    char base64Result[32];
-    size_t theResultLength = 32;
-    Base64EncodeData(result, 20, base64Result, &theResultLength);
-    NSData *theData = [NSData dataWithBytes:base64Result length:theResultLength];
-    
-    NSLog(@"Request: %@", [[request URL] absoluteString]);
-    NSLog(@"string: %@", requestString);
-    NSLog(@"secret: %@", secretString);
-    NSLog(@"Data: %@", [NSData dataWithBytes:result length:20]);
-    NSLog(@"64: %@", [[[NSString alloc] initWithData:theData encoding:NSUTF8StringEncoding] autorelease]);
-    
-    
-    
-    return [[[NSString alloc] initWithData:theData encoding:NSUTF8StringEncoding] autorelease];
+    // base 64
+    NSData *data = [NSData dataWithBytes:digest length:CC_SHA1_DIGEST_LENGTH];
+    return AFEncodeBase64WithData(data);
 }
 
 static inline NSString * AFPlaintextSignatureWithConsumerSecretAndRequestTokenSecret(NSString *consumerSecret, NSString *requestTokenSecret, NSStringEncoding stringEncoding) {
