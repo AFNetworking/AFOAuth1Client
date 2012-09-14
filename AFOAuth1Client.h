@@ -24,6 +24,7 @@
 
 extern NSString * const kAFOAuth1Version;
 extern NSString * const kAFApplicationLaunchedWithURLNotification;
+extern NSString * const kAFApplicationLaunchOptionsURLKey;
 
 enum {
 	AFOAuthSignatureMethodRejected = 0,
