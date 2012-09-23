@@ -1,6 +1,7 @@
-# Extremely Experimental - Do Not Use In Production
+# AFOAuth1Client
 
-This project is still under active development, but feel free to look around if you're curious. This will likely be merged with [AFOAuth2Client](https://github.com/AFNetworking/AFOAuth2Client) once it is completed.
+> _This is still in early stages of development, so proceed with caution when using this in a production application.  
+> Any bug reports, feature requests, or general feedback at this point would be greatly appreciated._
 
 ## Instructions
 
@@ -33,6 +34,3 @@ Mattt Thompson
 ## License
 
 AFOAuth1Client is available under the MIT license. See the LICENSE file for more info.
-
-
-
