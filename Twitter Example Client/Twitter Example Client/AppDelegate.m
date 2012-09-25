@@ -39,7 +39,7 @@
                                                             NSLog(@"Your OAuth credentials are now set in the `Authorization` HTTP header");
                                                             
                                                             [self.twitterClient registerHTTPOperationClass:[AFJSONRequestOperation class]];
-                                                            [self.twitterClient getPath:@"1/statuses/user_timeline.json" parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
+                                                            [self.twitterClient getOAuthPath:@"1/statuses/user_timeline.json" parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
                                                                 NSArray *responseArray = (NSArray *)responseObject;
                                                                 [responseArray enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
                                                                     NSLog(@"obj: %@", obj);

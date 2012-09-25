@@ -12,7 +12,7 @@ Register your application to [launch from a custom URL scheme](http://iphonedeve
 Here's how it all looks together:
 
 ``` objective-c
-AFOAuth1Client *twitterClient = [[[AFOAuth1Client alloc] initWithBaseURL:[NSURL URLWithString:@"https://twitter.com/oauth/"] key:@"..." secret:@"..."] autorelease];
+AFOAuth1Client *twitterClient = [[[AFOAuth1Client alloc] initWithBaseURL:[NSURL URLWithString:@"https://twitter.com/oauth/"] clientKey:@"..." clientSecret:@"..."] autorelease];
     
 // Your application will be sent to the background until the user authenticates, and then the app will be brought back using the callback URL
 [twitterClient authorizeUsingOAuthWithRequestTokenPath:@"/request_token" userAuthorizationPath:@"/authorize" callbackURL:[NSURL URLWithString:@"x-com-YOUR-APP-SCHEME://success"] accessTokenPath:@"/access_token" success:^(AFOAuth1Token *accessToken) {
@@ -22,6 +22,32 @@ AFOAuth1Client *twitterClient = [[[AFOAuth1Client alloc] initWithBaseURL:[NSURL 
     NSLog(@"Error: %@", error);
 }];
 ```
+Remeber to handle the callback in your application delegate
+
+``` objective-c
+-(BOOL)application:(UIApplication *)application handleOpenURL:(NSURL *)url {
+    return [twitterClient handleURL:url];
+}
+-(BOOL)application:(UIApplication *)application openURL:(NSURL *)url sourceApplication:(NSString *)sourceApplication annotation:(id)annotation {
+    return [twitterClient handleURL:url];
+}
+```
+
+Create simple requests
+
+``` objective-c
+[self.twitterClient getOAuthPath:@"1/statuses/user_timeline.json" 
+					  parameters:nil 
+					     success:^(AFHTTPRequestOperation *operation, id responseObject) {
+	                        NSArray *responseArray = (NSArray *)responseObject;
+	                        [responseArray enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+	                            NSLog(@"obj: %@", obj);
+	                        }];
+                       } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+                       		NSLog(@"error: %@", error);
+                       }];
+```
+
 
 ## Contact
 
