@@ -32,12 +32,9 @@ static dispatch_queue_t property_list_request_operation_processing_queue() {
 }
 
 @interface AFPropertyListRequestOperation ()
-@property (readwrite, nonatomic, retain) id responsePropertyList;
+@property (readwrite, nonatomic) id responsePropertyList;
 @property (readwrite, nonatomic, assign) NSPropertyListFormat propertyListFormat;
-@property (readwrite, nonatomic, retain) NSError *propertyListError;
-
-+ (NSSet *)defaultAcceptableContentTypes;
-+ (NSSet *)defaultAcceptablePathExtensions;
+@property (readwrite, nonatomic) NSError *propertyListError;
 @end
 
 @implementation AFPropertyListRequestOperation
@@ -50,7 +47,7 @@ static dispatch_queue_t property_list_request_operation_processing_queue() {
                                                                     success:(void (^)(NSURLRequest *request, NSHTTPURLResponse *response, id propertyList))success
                                                                     failure:(void (^)(NSURLRequest *request, NSHTTPURLResponse *response, NSError *error, id propertyList))failure
 {
-    AFPropertyListRequestOperation *requestOperation = [[[self alloc] initWithRequest:request] autorelease];
+    AFPropertyListRequestOperation *requestOperation = [[self alloc] initWithRequest:request];
     [requestOperation setCompletionBlockWithSuccess:^(AFHTTPRequestOperation *operation, id responseObject) {
         if (success) {
             success(operation.request, operation.response, responseObject);
@@ -64,35 +61,20 @@ static dispatch_queue_t property_list_request_operation_processing_queue() {
     return requestOperation;
 }
 
-+ (NSSet *)defaultAcceptableContentTypes {
-    return [NSSet setWithObjects:@"application/x-plist", nil];
-}
-
-+ (NSSet *)defaultAcceptablePathExtensions {
-    return [NSSet setWithObjects:@"plist", nil];
-}
-
 - (id)initWithRequest:(NSURLRequest *)urlRequest {
     self = [super initWithRequest:urlRequest];
     if (!self) {
         return nil;
     }
-    
-    self.acceptableContentTypes = [[self class] defaultAcceptableContentTypes];
-    
+        
     self.propertyListReadOptions = NSPropertyListImmutable;
     
     return self;
 }
 
-- (void)dealloc {
-    [_responsePropertyList release];
-    [_propertyListError release];
-    [super dealloc];
-}
 
 - (id)responsePropertyList {
-    if (!_responsePropertyList && [self isFinished]) {
+    if (!_responsePropertyList && [self.responseData length] > 0 && [self isFinished]) {
         NSPropertyListFormat format;
         NSError *error = nil;
         self.responsePropertyList = [NSPropertyListSerialization propertyListWithData:self.responseData options:self.propertyListReadOptions format:&format error:&error];
@@ -111,13 +93,21 @@ static dispatch_queue_t property_list_request_operation_processing_queue() {
     }
 }
 
+#pragma mark - AFHTTPRequestOperation
+
++ (NSSet *)acceptableContentTypes {
+    return [NSSet setWithObjects:@"application/x-plist", nil];
+}
+
 + (BOOL)canProcessRequest:(NSURLRequest *)request {
-    return [[self defaultAcceptableContentTypes] containsObject:[request valueForHTTPHeaderField:@"Accept"]] || [[self defaultAcceptablePathExtensions] containsObject:[[request URL] pathExtension]];
+    return [[[request URL] pathExtension] isEqualToString:@"plist"] || [super canProcessRequest:request];
 }
 
 - (void)setCompletionBlockWithSuccess:(void (^)(AFHTTPRequestOperation *operation, id responseObject))success
                               failure:(void (^)(AFHTTPRequestOperation *operation, NSError *error))failure
 {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warc-retain-cycles"
     self.completionBlock = ^ {
         if ([self isCancelled]) {
             return;
@@ -125,28 +115,31 @@ static dispatch_queue_t property_list_request_operation_processing_queue() {
         
         if (self.error) {
             if (failure) {
-                dispatch_async(dispatch_get_main_queue(), ^(void) {
+                dispatch_async(self.failureCallbackQueue ?: dispatch_get_main_queue(), ^{
                     failure(self, self.error);
                 });
             }
         } else {
             dispatch_async(property_list_request_operation_processing_queue(), ^(void) {
                 id propertyList = self.responsePropertyList;
-
-                dispatch_async(dispatch_get_main_queue(), ^(void) {
-                    if (self.propertyListError) {
-                        if (failure) {
-                            failure(self, self.propertyListError);
-                        }
-                    } else {
-                        if (success) {
-                            success(self, propertyList);
-                        }
+                
+                if (self.propertyListError) {
+                    if (failure) {
+                        dispatch_async(self.failureCallbackQueue ?: dispatch_get_main_queue(), ^{
+                            failure(self, self.error);
+                        });
                     }
-                }); 
+                } else {
+                    if (success) {
+                        dispatch_async(self.successCallbackQueue ?: dispatch_get_main_queue(), ^{
+                            success(self, propertyList);
+                        });
+                    } 
+                }
             });
         }
-    };    
+    };
+#pragma clang diagnostic pop
 }
 
 @end

@@ -32,13 +32,7 @@
  
  - `application/x-plist`
  */
-@interface AFPropertyListRequestOperation : AFHTTPRequestOperation {
-@private
-    id _responsePropertyList;
-    NSPropertyListFormat _propertyListFormat;
-    NSPropertyListReadOptions _propertyListReadOptions;
-    NSError *_propertyListError;
-}
+@interface AFPropertyListRequestOperation : AFHTTPRequestOperation
 
 ///----------------------------
 /// @name Getting Response Data
@@ -47,7 +41,7 @@
 /**
  An object deserialized from a plist constructed using the response data.
  */
-@property (readonly, nonatomic, retain) id responsePropertyList;
+@property (readonly, nonatomic) id responsePropertyList;
 
 ///--------------------------------------
 /// @name Managing Property List Behavior
