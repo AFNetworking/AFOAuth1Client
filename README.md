@@ -12,12 +12,11 @@ Register your application to [launch from a custom URL scheme](http://iphonedeve
 Here's how it all looks together:
 
 ``` objective-c
-AFOAuth1Client *twitterClient = [[[AFOAuth1Client alloc] initWithBaseURL:[NSURL URLWithString:@"https://twitter.com/oauth/"] clientKey:@"..." clientSecret:@"..."] autorelease];
+AFOAuth1Client *twitterClient = [[AFOAuth1Client alloc] initWithBaseURL:[NSURL URLWithString:@"https://api.twitter.com/"] clientKey:@"..." clientSecret:@"..."];
     
 // Your application will be sent to the background until the user authenticates, and then the app will be brought back using the callback URL
-[twitterClient authorizeUsingOAuthWithRequestTokenPath:@"/request_token" userAuthorizationPath:@"/authorize" callbackURL:[NSURL URLWithString:@"x-com-YOUR-APP-SCHEME://success"] accessTokenPath:@"/access_token" success:^(AFOAuth1Token *accessToken) {
+[twitterClient authorizeUsingOAuthWithRequestTokenPath:@"oauth/request_token" userAuthorizationPath:@"oauth/authorize" callbackURL:[NSURL URLWithString:@"x-com-YOUR-APP-SCHEME://success"] accessTokenPath:@"oauth/access_token" success:^(AFOAuth1Token *accessToken) {
     NSLog(@"Success: %@", accessToken);
-    NSLog(@"Your OAuth credentials are now set in the `Authorization` HTTP header");
 } failure:^(NSError *error) {
     NSLog(@"Error: %@", error);
 }];
