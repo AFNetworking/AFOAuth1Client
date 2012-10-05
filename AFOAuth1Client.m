@@ -36,7 +36,7 @@
 // copied from AFHttpClient
 static NSString * AFPercentEscapedQueryStringPairMemberFromStringWithEncoding(NSString *string, NSStringEncoding encoding) {
     // Escape characters that are legal in URIs, but have unintentional semantic significance when used in a query string parameter
-    static NSString * const kAFLegalCharactersToBeEscaped = @":/.?&=;+!@$()~";
+    static NSString * const kAFLegalCharactersToBeEscaped = @":/?&=;+!@$()~";
     
 	return (__bridge_transfer  NSString *)CFURLCreateStringByAddingPercentEscapes(kCFAllocatorDefault, (__bridge CFStringRef)string, NULL, (__bridge CFStringRef)kAFLegalCharactersToBeEscaped, CFStringConvertNSStringEncodingToEncoding(encoding));
 }
@@ -415,7 +415,7 @@ typedef void(^failure_block)(NSError* error);
             } else {
                 oauthHeaderString = [NSString stringWithFormat:@"OAuth %@", [mutableComponents componentsJoinedByString:@", "]];
             }
-            
+            NSLog(@"Authorization: %@", oauthHeaderString);
             [request setValue:oauthHeaderString forHTTPHeaderField:@"Authorization"];
         }
             break;
@@ -457,6 +457,7 @@ typedef void(^failure_block)(NSError* error);
         return NO;
     }
     
+    
     NSLog(@"URL: %@", url);
 
     self.accessToken.verifier = [url AF_getParamNamed:@"oauth_verifier"];
@@ -490,11 +491,13 @@ typedef void(^failure_block)(NSError* error);
     self.accessTokenPath = accessTokenPath;
     self.accessMethod = accessMethod;
     
+    self.success_block = success;
+    self.failure_block = failure;
+    
     [self acquireOAuthRequestTokenWithPath:requestTokenPath
                                   callback:callbackURL
                               accessMethod:(NSString *)accessMethod
                                    success:^(AFOAuth1Token *requestToken) {
-
                                        NSURL* url = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@?oauth_token=%@", self.baseURL, userAuthorizationPath, requestToken.token] ];
                                        NSLog(@"Going out... %@", url);
 #if __IPHONE_OS_VERSION_MIN_REQUIRED
@@ -527,8 +530,8 @@ typedef void(^failure_block)(NSError* error);
                                   success:^(AFHTTPRequestOperation *operation, id responseObject) {
                                       NSLog(@"Success: %@", operation.responseString);                                      
                                       if (success) {
-                                          AFOAuth1Token *requestToken = [[AFOAuth1Token alloc] initWithQueryString:operation.responseString];
-                                          success(requestToken);
+                                          self.accessToken = [[AFOAuth1Token alloc] initWithQueryString:operation.responseString];
+                                          success(self.accessToken);
                                       }
                                   }
                                   failure:^(AFHTTPRequestOperation *operation, NSError *error) {
@@ -577,10 +580,23 @@ typedef void(^failure_block)(NSError* error);
                             parameters:(NSDictionary*)parameters
                                success:(void(^)(AFHTTPRequestOperation *operation, id responseObject))success
                                failure:(void(^)(AFHTTPRequestOperation *operation, NSError *error))failure {
-    // create the request
-    NSMutableURLRequest* request = [self requestWithMethod:method path:path parameters:parameters];
+    // remove any oauth param from parameters
+    NSMutableDictionary* params = [NSMutableDictionary dictionaryWithCapacity:parameters.count];
+    NSMutableDictionary* oauthParams = [NSMutableDictionary dictionaryWithCapacity:5];
+    for (NSString* key in [parameters allKeys]) {
+        if ([key hasPrefix:@"oauth_"]) {
+            [oauthParams setObject:[parameters objectForKey:key] forKey:key];
+        } else {
+            [params setObject:[parameters objectForKey:key] forKey:key];
+        }
+    }
+    
+    // create the request with filtered params
+    NSMutableURLRequest* request = [super requestWithMethod:method path:path parameters:params];
     // get the default oauth parameters
     NSMutableDictionary* allParams = [NSMutableDictionary dictionaryWithDictionary:[self oauthParameters]];
+    // append the user's oauth params
+    [allParams addEntriesFromDictionary:oauthParams];
     // append the user's parameters
     [allParams addEntriesFromDictionary:[self parametersFromRequest:request]];
     // sign the request
@@ -597,12 +613,28 @@ typedef void(^failure_block)(NSError* error);
                                                       path:(NSString *)path
                                                 parameters:(NSDictionary *)parameters
                                  constructingBodyWithBlock:(void (^)(id<AFMultipartFormData>))block {
+    // remove any oauth param from parameters
+    NSMutableDictionary* params = [NSMutableDictionary dictionaryWithCapacity:parameters.count];
+    NSMutableDictionary* oauthParams = [NSMutableDictionary dictionaryWithCapacity:5];
+    for (NSString* key in [parameters allKeys]) {
+        if ([key hasPrefix:@"oauth_"]) {
+            [oauthParams setObject:[parameters objectForKey:key] forKey:key];
+        } else {
+            [params setObject:[parameters objectForKey:key] forKey:key];
+        }
+    }
+    // create the request with filtered params
     NSMutableURLRequest* request = [super multipartFormRequestWithMethod:method
                                                                     path:path
-                                                              parameters:parameters
+                                                              parameters:params
                                                constructingBodyWithBlock:block];
+    // get the default oauth parameters
     NSMutableDictionary* allParams = [NSMutableDictionary dictionaryWithDictionary:[self oauthParameters]];
+    // append the user's oauth params
+    [allParams addEntriesFromDictionary:oauthParams];
+    // append the user's parameters
     [allParams addEntriesFromDictionary:[self parametersFromRequest:request]];
+    // sign the request
     [self oauthSignRequest:request secret:self.accessToken.tokenSecret parameters:allParams];
     
     return request;

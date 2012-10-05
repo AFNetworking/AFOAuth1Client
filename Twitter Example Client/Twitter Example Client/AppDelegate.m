@@ -26,7 +26,7 @@
     self.twitterClient = [[AFOAuth1Client alloc] initWithBaseURL:[NSURL URLWithString:@"https://api.twitter.com/"]
                                                        clientKey:@"4oFCF0AjP4PQDUaCh5RQ"
                                                     clientSecret:@"NxAihESVsdUXSUxtHrml2VBHA0xKofYKmmGS01KaSs"];
-    self.twitterClient.oauthMethod = AFOAuthMethodGet;
+    self.twitterClient.oauthMethod = AFOAuthMethodHeader;
     
     // Your application will be sent to the background until the user authenticates, and then the app will be brought back using the callback URL
     [self.twitterClient authorizeUsingOAuthWithRequestTokenPath:@"oauth/request_token"
@@ -36,7 +36,6 @@
                                                    accessMethod:@"POST"
                                                         success:^(AFOAuth1Token *accessToken) {
                                                             NSLog(@"Success: %@", accessToken);
-                                                            NSLog(@"Your OAuth credentials are now set in the `Authorization` HTTP header");
                                                             
                                                             [self.twitterClient registerHTTPOperationClass:[AFJSONRequestOperation class]];
                                                             [self.twitterClient getOAuthPath:@"1/statuses/user_timeline.json" parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
