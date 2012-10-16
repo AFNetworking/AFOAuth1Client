@@ -479,7 +479,6 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
             [self signCallPerAuthHeaderWithPath:path andParameters:parameters andMethod:@"GET"];
     }
     [super getPath:path parameters:parameters success:success failure:failure];
-	
 }
 
 - (void)postPath:(NSString *)path 
@@ -507,7 +506,7 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
         else 
             [self signCallPerAuthHeaderWithPath:path andParameters:parameters andMethod:@"PUT"];
     }
-    [self putPath:path parameters:parameters success:success failure:failure];
+    [super putPath:path parameters:parameters success:success failure:failure];
 }
 
 - (void)deletePath:(NSString *)path 
@@ -521,7 +520,7 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
         else 
             [self signCallPerAuthHeaderWithPath:path andParameters:parameters andMethod:@"DELETE"];
     }
-    [self deletePath:path parameters:parameters success:success failure:failure];
+    [super deletePath:path parameters:parameters success:success failure:failure];
 }
 
 - (void)patchPath:(NSString *)path 
@@ -535,7 +534,7 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
         else 
             [self signCallPerAuthHeaderWithPath:path andParameters:parameters andMethod:@"PATCH"];
     }
-    [self patchPath:path parameters:parameters success:success failure:failure];
+    [super patchPath:path parameters:parameters success:success failure:failure];
 }
 
 - (NSMutableDictionary *)paramsWithOAuthFromParams:(NSDictionary *)parameters {
