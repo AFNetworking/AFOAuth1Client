@@ -21,6 +21,7 @@
 // THE SOFTWARE.
 
 #import "AFOAuth1Client.h"
+#import "AFHTTPClient.h"
 #import "AFHTTPRequestOperation.h"
 
 #include "hmac.h"
@@ -29,7 +30,7 @@
 static inline NSDictionary * AFParametersFromQueryString(NSString *queryString) {
     NSMutableDictionary *parameters = [NSMutableDictionary dictionary];
     if (queryString) {
-        NSScanner *parameterScanner = [[[NSScanner alloc] initWithString:queryString] autorelease];
+        NSScanner *parameterScanner = [[NSScanner alloc] initWithString:queryString];
         NSString *name = nil;
         NSString *value = nil;
         
@@ -104,7 +105,7 @@ NSString * const kAFOAuth1Version = @"1.0";
 
 static inline NSString * AFNonceWithPath(NSString *path) {
     return @"cmVxdWVzdF90bw";
-    return AFBase64EncodedStringFromString([[NSString stringWithFormat:@"%@-%@", path, [[NSDate date] description]] substringWithRange:NSMakeRange(0, 10)]);
+//    return AFBase64EncodedStringFromString([[NSString stringWithFormat:@"%@-%@", path, [[NSDate date] description]] substringWithRange:NSMakeRange(0, 10)]);
 }
 
 static inline NSString * NSStringFromAFOAuthSignatureMethod(AFOAuthSignatureMethod signatureMethod) {
@@ -118,36 +119,32 @@ static inline NSString * NSStringFromAFOAuthSignatureMethod(AFOAuthSignatureMeth
     }
 }
 
+// TODO this is copied from AFNetworking. Not sure what the best way to of using it is.
+static NSString * AFPercentEscapedQueryStringPairMemberFromStringWithEncoding(NSString *string, NSStringEncoding encoding) {
+    static NSString * const kAFCharactersToBeEscaped = @":/?&=;+!@#$()~";
+    static NSString * const kAFCharactersToLeaveUnescaped = @"[].";
+    
+	return (__bridge_transfer  NSString *)CFURLCreateStringByAddingPercentEscapes(kCFAllocatorDefault, (__bridge CFStringRef)string, (__bridge CFStringRef)kAFCharactersToLeaveUnescaped, (__bridge CFStringRef)kAFCharactersToBeEscaped, CFStringConvertNSStringEncodingToEncoding(encoding));
+}
+
 static inline NSString * AFHMACSHA1SignatureWithConsumerSecretAndRequestTokenSecret(NSURLRequest *request, NSString *consumerSecret, NSString *requestTokenSecret, NSStringEncoding stringEncoding) {
     NSString *secretString = [NSString stringWithFormat:@"%@&%@", consumerSecret, @""];
     NSData *secretStringData = [secretString dataUsingEncoding:stringEncoding];
-    
+
     NSString *queryString = [[[[[request URL] query] componentsSeparatedByString:@"&"] sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)] componentsJoinedByString:@"&"];
-    NSLog(@"Before: %@      After: %@", [[request URL] query], queryString);
-    
-    NSString *requestString = [NSString stringWithFormat:@"%@&%@&%@", [request HTTPMethod], AFURLEncodedStringFromStringWithEncoding([[[[request URL] absoluteString] componentsSeparatedByString:@"?"] objectAtIndex:0], stringEncoding), AFURLEncodedStringFromStringWithEncoding(queryString, stringEncoding)];
+
+    NSString *requestString = [NSString stringWithFormat:@"%@&%@&%@", [request HTTPMethod], AFPercentEscapedQueryStringPairMemberFromStringWithEncoding([[[[request URL] absoluteString] componentsSeparatedByString:@"?"] objectAtIndex:0], stringEncoding), AFPercentEscapedQueryStringPairMemberFromStringWithEncoding(queryString, stringEncoding)];
     NSData *requestStringData = [requestString dataUsingEncoding:stringEncoding];
-//    NSData *consumerSecretData = [consumerSecret dataUsingEncoding:stringEncoding];
-//    NSData *requestTokenSecretData = [requestTokenSecret dataUsingEncoding:stringEncoding];
     unsigned char result[20];
     hmac_sha1((unsigned char *)[requestStringData bytes], [requestStringData length], (unsigned char *)[secretStringData bytes], [secretStringData length], result);
-    
+
     //Base64 Encoding
-    
     char base64Result[32];
     size_t theResultLength = 32;
     Base64EncodeData(result, 20, base64Result, &theResultLength);
     NSData *theData = [NSData dataWithBytes:base64Result length:theResultLength];
     
-    NSLog(@"Request: %@", [[request URL] absoluteString]);
-    NSLog(@"string: %@", requestString);
-    NSLog(@"secret: %@", secretString);
-    NSLog(@"Data: %@", [NSData dataWithBytes:result length:20]);
-    NSLog(@"64: %@", [[[NSString alloc] initWithData:theData encoding:NSUTF8StringEncoding] autorelease]);
-    
-    
-    
-    return [[[NSString alloc] initWithData:theData encoding:NSUTF8StringEncoding] autorelease];
+    return [[NSString alloc] initWithData:theData encoding:NSUTF8StringEncoding];
 }
 
 static inline NSString * AFPlaintextSignatureWithConsumerSecretAndRequestTokenSecret(NSString *consumerSecret, NSString *requestTokenSecret, NSStringEncoding stringEncoding) {
@@ -196,14 +193,6 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
     return self;
 }
 
-- (void)dealloc {
-    [_key release];
-    [_secret release];
-    [_serviceProviderIdentifier release];
-    [_realm release];
-    [super dealloc];
-}
-
 - (void)authorizeUsingOAuthWithRequestTokenPath:(NSString *)requestTokenPath
                           userAuthorizationPath:(NSString *)userAuthorizationPath
                                     callbackURL:(NSURL *)callbackURL
@@ -211,26 +200,36 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
                                         success:(void (^)(AFOAuth1Token *accessToken))success 
                                         failure:(void (^)(NSError *error))failure
 {
-    [self acquireOAuthRequestTokenWithPath:requestTokenPath callback:callbackURL success:^(id requestToken) {
+    [self acquireOAuthRequestTokenWithPath:requestTokenPath callback:callbackURL success:^(AFOAuth1Token *requestToken) {
 #if __IPHONE_OS_VERSION_MIN_REQUIRED
+        // TODO UIApplicationDidFinishLaunchingNotification does not get called when relaunched from background..
         [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationDidFinishLaunchingNotification object:nil queue:self.operationQueue usingBlock:^(NSNotification *notification) {
-            NSURL *url = [[notification userInfo] valueForKey:UIApplicationLaunchOptionsURLKey];
-            NSLog(@"URL: %@", url);
+//            NSURL *url = [[notification userInfo] valueForKey:UIApplicationLaunchOptionsURLKey];
             
-            [self acquireOAuthAccessTokenWithPath:accessTokenPath requestToken:nil success:^(id accessToken) {
+            [self acquireOAuthAccessTokenWithPath:accessTokenPath requestToken:nil success:^(AFOAuth1Token * accessToken) {
                 if (success) {
                     success(accessToken);
                 }
             } failure:failure];
         }];
         
-        NSLog(@"Going out");
+        NSMutableDictionary *parameters = [NSMutableDictionary dictionary];
+        [parameters setValue:requestToken.key forKey:@"oauth_token"];
         
-        [[UIApplication sharedApplication] openURL:[[self requestWithMethod:@"GET" path:userAuthorizationPath parameters:nil] URL]];
+        [[UIApplication sharedApplication] openURL:[[self requestWithMethod:@"GET" path:userAuthorizationPath parameters:parameters] URL]];
 #else
-//        TODO
-
-//        [[NSWorkspace sharedWorkspace] openURL:userAuthURL];
+        [[NSNotificationCenter defaultCenter] addObserverForName:NSApplicationDidFinishLaunchingNotification object:nil queue:self.operationQueue usingBlock:^(NSNotification *notification) {
+            [self acquireOAuthAccessTokenWithPath:accessTokenPath requestToken:nil success:^(AFOAuth1Token * accessToken) {
+                if (success) {
+                    success(accessToken);
+                }
+            } failure:failure];
+        }];
+        
+        NSMutableDictionary *parameters = [NSMutableDictionary dictionary];
+        [parameters setValue:requestToken.key forKey:@"oauth_token"];
+        
+        [[NSWorkspace sharedWorkspace] openURL:[[self requestWithMethod:@"GET" path:userAuthorizationPath parameters:parameters] URL]];
 #endif
     } failure:failure];
 }
@@ -272,19 +271,14 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
     
     NSString *oauthString = [NSString stringWithFormat:@"OAuth %@", [mutableComponents componentsJoinedByString:@", "]];
     
-    NSLog(@"OAuth: %@", oauthString);
-    
     [self setDefaultHeader:@"Authorization" value:oauthString];
     
-    [self postPath:[path stringByAppendingFormat:@"?%@", AFQueryStringFromParametersWithEncoding(parameters, self.stringEncoding)] parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
-        NSLog(@"Success: %@", operation.responseString);
-        
+    [self postPath:path parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
         if (success) {
-            AFOAuth1Token *requestToken = [[[AFOAuth1Token alloc] initWithQueryString:operation.responseString] autorelease];
+            AFOAuth1Token *requestToken = [[AFOAuth1Token alloc] initWithQueryString:operation.responseString];
             success(requestToken);
         }
     } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
-        NSLog(@"Failure: %@", operation.responseString);
         if (failure) {
             failure(error);
         }
