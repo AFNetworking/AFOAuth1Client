@@ -1,0 +1,3 @@
+[submodule "Twitter Example Client/AFNetworking"]
+	path = Twitter Example Client/AFNetworking
+	url = git://github.com/AFNetworking/AFNetworking.git
