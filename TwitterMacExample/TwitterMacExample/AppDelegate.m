@@ -13,11 +13,6 @@
 
 @synthesize window = _window;
 
-- (void)dealloc
-{
-    [super dealloc];
-}
-
 - (void)getUrl:(NSAppleEventDescriptor *)event withReplyEvent:(NSAppleEventDescriptor *)replyEvent
 {
     NSString *urlStr = [[event paramDescriptorForKeyword:keyDirectObject] stringValue];
@@ -27,9 +22,9 @@
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification
 {
     [[NSAppleEventManager sharedAppleEventManager] setEventHandler:self andSelector:@selector(getUrl:withReplyEvent:) forEventClass:kInternetEventClass andEventID:kAEGetURL];
-    LSSetDefaultHandlerForURLScheme((CFStringRef)@"af-twitter", (CFStringRef)[[NSBundle mainBundle] bundleIdentifier]);
+    LSSetDefaultHandlerForURLScheme((CFStringRef)@"af-twitter", (CFStringRef)CFBridgingRetain([[NSBundle mainBundle] bundleIdentifier]));
     
-    AFOAuth1Client *twitterClient = [[[AFOAuth1Client alloc] initWithBaseURL:[NSURL URLWithString:@"https://api.twitter.com/oauth/"] key:@"4oFCF0AjP4PQDUaCh5RQ" secret:@"NxAihESVsdUXSUxtHrml2VBHA0xKofYKmmGS01KaSs"] autorelease];
+    AFOAuth1Client *twitterClient = [[AFOAuth1Client alloc] initWithBaseURL:[NSURL URLWithString:@"https://api.twitter.com/oauth/"] key:@"4oFCF0AjP4PQDUaCh5RQ" secret:@"NxAihESVsdUXSUxtHrml2VBHA0xKofYKmmGS01KaSs"];
     
     // Your application will be sent to the background until the user authenticates, and then the app will be brought back using the callback URL
     [twitterClient authorizeUsingOAuthWithRequestTokenPath:@"request_token" userAuthorizationPath:@"authorize" callbackURL:[NSURL URLWithString:@"af-twitter://success"] accessTokenPath:@"access_token" success:^(AFOAuth1Token *accessToken) {
