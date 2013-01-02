@@ -401,7 +401,7 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
         [parameters setValue:self.realm forKey:@"realm"];
     }
     
-    NSMutableURLRequest *mutableRequest = [self requestWithMethod:accessMethod path:path parameters:parameters];
+    NSMutableURLRequest *mutableRequest = [self requestWithMethod:@"GET" path:path parameters:parameters];
     [mutableRequest setHTTPMethod:accessMethod];
     [parameters setValue:AFSignatureUsingMethodWithSignatureWithConsumerSecretAndRequestTokenSecret(mutableRequest, self.signatureMethod, self.secret, requestToken.secret, self.stringEncoding) forKey:@"oauth_signature"];
     
