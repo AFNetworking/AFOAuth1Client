@@ -2,8 +2,8 @@
 //  main.m
 //  Twitter iOS Example Client
 //
-//  Created by Valentina Ghirardi on 01/08/12.
-//  Copyright (c) 2012 Just a Dream. All rights reserved.
+//  Created by Enrico Ghirardi on 02/01/13.
+//  Copyright (c) 2013 Just a Dream. All rights reserved.
 //
 
 #import <UIKit/UIKit.h>
