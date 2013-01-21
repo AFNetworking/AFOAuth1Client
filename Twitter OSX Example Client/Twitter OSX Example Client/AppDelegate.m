@@ -1,28 +1,35 @@
+// AppDelegate.m
 //
-//  AppDelegate.m
-//  Twitter OSX Example Client
+// Created by Enrico Ghirardi
+// Copyright (c) 2011 Mattt Thompson (http://mattt.me/)
 //
-//  Created by Enrico Ghirardi on 02/01/13.
-//  Copyright (c) 2013 Just a Dream. All rights reserved.
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 //
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
 
 #import "AppDelegate.h"
 
 @implementation AppDelegate
 
-- (void)getUrl:(NSAppleEventDescriptor *)event withReplyEvent:(NSAppleEventDescriptor *)replyEvent
-{
-    NSString *urlStr = [[event paramDescriptorForKeyword:keyDirectObject] stringValue];
-    NSURL *url = [NSURL URLWithString:urlStr];
-    NSLog(@"Callback: %@", url);
-    NSDictionary *info = [NSDictionary dictionaryWithObject:url forKey:kAFApplicationLaunchOptionsURLKey];
-    NSNotification *notification = [NSNotification notificationWithName:kAFApplicationLaunchedWithURLNotification object:self userInfo:info];
-    [[NSNotificationCenter defaultCenter] postNotification:notification];
-}
+#pragma mark - NSApplicationDelegate
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification
 {
-    [[NSAppleEventManager sharedAppleEventManager] setEventHandler:self andSelector:@selector(getUrl:withReplyEvent:) forEventClass:kInternetEventClass andEventID:kAEGetURL];
+    [[NSAppleEventManager sharedAppleEventManager] setEventHandler:self andSelector:@selector(handleEvent:withReplyEvent:) forEventClass:kInternetEventClass andEventID:kAEGetURL];
     LSSetDefaultHandlerForURLScheme((__bridge CFStringRef)@"af-twitter", (__bridge CFStringRef)[[NSBundle mainBundle] bundleIdentifier]);
     
     self.twitterClient = [[AFOAuth1Client alloc] initWithBaseURL:[NSURL URLWithString:@"https://api.twitter.com/"] key:@"4oFCF0AjP4PQDUaCh5RQ" secret:@"NxAihESVsdUXSUxtHrml2VBHA0xKofYKmmGS01KaSs"];
@@ -34,14 +41,25 @@
         [self.twitterClient getPath:@"1/statuses/user_timeline.json" parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
             NSArray *responseArray = (NSArray *)responseObject;
             [responseArray enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
-                NSLog(@"obj: %@", obj);
+                NSLog(@"Success: %@", obj);
             }];
         } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
-            NSLog(@"error: %@", error);
+            NSLog(@"Error: %@", error);
         }];
     } failure:^(NSError *error) {
         NSLog(@"Error: %@", error);
     }];
+}
+
+#pragma mark - NSAppleEventManager
+
+- (void)handleEvent:(NSAppleEventDescriptor *)event
+     withReplyEvent:(NSAppleEventDescriptor *)replyEvent
+{
+    NSURL *url = [NSURL URLWithString:[[event paramDescriptorForKeyword:keyDirectObject] stringValue]];
+    NSDictionary *info = [NSDictionary dictionaryWithObject:url forKey:kAFApplicationLaunchOptionsURLKey];
+    NSNotification *notification = [NSNotification notificationWithName:kAFApplicationLaunchedWithURLNotification object:self userInfo:info];
+    [[NSNotificationCenter defaultCenter] postNotification:notification];
 }
 
 @end
