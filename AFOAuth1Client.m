@@ -25,6 +25,14 @@
 
 #import <CommonCrypto/CommonHMAC.h>
 
+static NSString * const kAFOAuth1Version = @"1.0";
+NSString * const kAFApplicationLaunchedWithURLNotification = @"kAFApplicationLaunchedWithURLNotification";
+#if __IPHONE_OS_VERSION_MIN_REQUIRED
+NSString * const kAFApplicationLaunchOptionsURLKey = @"UIApplicationLaunchOptionsURLKey";
+#else
+NSString * const kAFApplicationLaunchOptionsURLKey = @"NSApplicationLaunchOptionsURLKey";
+#endif
+
 static NSString * AFEncodeBase64WithData(NSData *data) {
     NSUInteger length = [data length];
     NSMutableData *mutableData = [NSMutableData dataWithLength:((length + 2) / 3) * 4];
@@ -89,59 +97,6 @@ static inline BOOL AFQueryStringValueIsTrue(NSString *value) {
     return value && [[value lowercaseString] hasPrefix:@"t"];
 }
 
-@interface AFOAuth1Token ()
-@property (readwrite, nonatomic, copy) NSString *key;
-@property (readwrite, nonatomic, copy) NSString *secret;
-@property (readwrite, nonatomic, copy) NSString *session;
-@property (readwrite, nonatomic, copy) NSString *verifier;
-@property (readwrite, nonatomic, strong) NSDate *expiration;
-@property (readwrite, nonatomic, assign, getter = canBeRenewed) BOOL renewable;
-@end
-
-@implementation AFOAuth1Token
-@synthesize key = _key;
-@synthesize secret = _secret;
-@synthesize session = _session;
-@synthesize verifier = _verifier;
-@synthesize expiration = _expiration;
-@synthesize renewable = _renewable;
-@dynamic expired;
-
-- (id)initWithQueryString:(NSString *)queryString {
-    self = [super init];
-    if (!self) {
-        return nil;
-    }
-    
-    NSDictionary *attributes = AFParametersFromQueryString(queryString);
-    
-    self.key = attributes[@"oauth_token"];
-    self.secret = attributes[@"oauth_token_secret"];
-    self.session = attributes[@"oauth_session_handle"];
-    
-    if (attributes[@"oauth_token_duration"]) {
-        self.expiration = [NSDate dateWithTimeIntervalSinceNow:[attributes[@"oauth_token_duration"] doubleValue]];
-    }
-    
-    if (attributes[@"oauth_token_renewable"]) {
-        self.renewable = AFQueryStringValueIsTrue(attributes[@"oauth_token_renewable"]);
-    }
-    
-    return self;
-}
-
-@end
-
-#pragma mark -
-
-NSString * const kAFOAuth1Version = @"1.0";
-NSString * const kAFApplicationLaunchedWithURLNotification = @"kAFApplicationLaunchedWithURLNotification";
-#if __IPHONE_OS_VERSION_MIN_REQUIRED
-NSString * const kAFApplicationLaunchOptionsURLKey = @"UIApplicationLaunchOptionsURLKey";
-#else
-NSString * const kAFApplicationLaunchOptionsURLKey = @"NSApplicationLaunchOptionsURLKey";
-#endif
-
 static inline NSString * AFNounce() {
     CFUUIDRef uuid = CFUUIDCreate(NULL);
     CFStringRef string = CFUUIDCreateString(NULL, uuid);
@@ -191,9 +146,63 @@ static inline NSString * AFPlaintextSignature(NSString *consumerSecret, NSString
     return nil;
 }
 
+#pragma mark -
+
+@interface AFOAuth1Token ()
+@property (readwrite, nonatomic, copy) NSString *key;
+@property (readwrite, nonatomic, copy) NSString *secret;
+@property (readwrite, nonatomic, copy) NSString *session;
+@property (readwrite, nonatomic, copy) NSString *verifier;
+@property (readwrite, nonatomic, strong) NSDate *expiration;
+@property (readwrite, nonatomic, assign, getter = canBeRenewed) BOOL renewable;
+@end
+
+@implementation AFOAuth1Token
+@synthesize key = _key;
+@synthesize secret = _secret;
+@synthesize session = _session;
+@synthesize verifier = _verifier;
+@synthesize expiration = _expiration;
+@synthesize renewable = _renewable;
+@dynamic expired;
+
+- (id)initWithQueryString:(NSString *)queryString {
+    self = [super init];
+    if (!self) {
+        return nil;
+    }
+
+    NSDictionary *attributes = AFParametersFromQueryString(queryString);
+
+    self.key = [attributes objectForKey:@"oauth_token"];
+    self.secret = [attributes objectForKey:@"oauth_token_secret"];
+    self.session = [attributes objectForKey:@"oauth_session_handle"];
+
+    if (attributes[@"oauth_token_duration"]) {
+        self.expiration = [NSDate dateWithTimeIntervalSinceNow:[[attributes objectForKey:@"oauth_token_duration"] doubleValue]];
+    }
+
+    if (attributes[@"oauth_token_renewable"]) {
+        self.renewable = AFQueryStringValueIsTrue([attributes objectForKey:@"oauth_token_renewable"]);
+    }
+
+    return self;
+}
+
+@end
+
+#pragma mark -
+
 @interface AFOAuth1Client ()
 @property (readwrite, nonatomic, copy) NSString *key;
 @property (readwrite, nonatomic, copy) NSString *secret;
+
+- (NSDictionary *)OAuthParameters;
+- (NSString *)OAuthSignatureForMethod:(NSString *)method
+                                 path:(NSString *)path
+                           parameters:(NSDictionary *)parameters
+                         requestToken:(AFOAuth1Token *)requestToken;
+- (NSString *)authorizationHeaderForParameters:(NSDictionary *)parameters;
 @end
 
 @implementation AFOAuth1Client
@@ -223,6 +232,60 @@ static inline NSString * AFPlaintextSignature(NSString *consumerSecret, NSString
     return self;
 }
 
+- (NSDictionary *)OAuthParameters {
+    NSMutableDictionary *parameters = [NSMutableDictionary dictionary];
+    [parameters setValue:kAFOAuth1Version forKey:@"oauth_version"];
+    [parameters setValue:NSStringFromAFOAuthSignatureMethod(self.signatureMethod) forKey:@"oauth_signature_method"];
+    [parameters setValue:self.key forKey:@"oauth_consumer_key"];
+    [parameters setValue:[[NSNumber numberWithInteger:floorf([[NSDate date] timeIntervalSince1970])] stringValue] forKey:@"oauth_timestamp"];
+    [parameters setValue:AFNounce() forKey:@"oauth_nonce"];
+
+    if (self.realm) {
+        [parameters setValue:self.realm forKey:@"realm"];
+    }
+
+    return parameters;
+}
+
+- (NSString *)OAuthSignatureForMethod:(NSString *)method
+                                 path:(NSString *)path
+                           parameters:(NSDictionary *)parameters
+                         requestToken:(AFOAuth1Token *)requestToken
+{
+    NSMutableURLRequest *request = [super requestWithMethod:@"HEAD" path:path parameters:parameters];
+    [request setHTTPMethod:method];
+
+    NSString *requestTokenSecret = requestToken ? requestToken.secret : nil;
+
+    switch (self.signatureMethod) {
+        case AFHMACSHA1SignatureMethod:
+            return AFHMACSHA1Signature(request, self.secret, requestTokenSecret, self.stringEncoding);
+        case AFPlaintextSignatureMethod:
+            return AFPlaintextSignature(self.secret, requestTokenSecret, self.stringEncoding);
+        default:
+            return nil;
+    }
+}
+
+- (NSString *)authorizationHeaderForParameters:(NSDictionary *)parameters {
+    static NSString * const kAFOAuth1AuthorizationFormatString = @"OAuth %@";
+
+    if (!parameters) {
+        return nil;
+    }
+
+    NSArray *sortedComponents = [[AFQueryStringFromParametersWithEncoding(parameters, self.stringEncoding) componentsSeparatedByString:@"&"] sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)];
+    NSMutableArray *mutableComponents = [NSMutableArray array];
+    for (NSString *component in sortedComponents) {
+        NSArray *subcomponents = [component componentsSeparatedByString:@"="];
+        [mutableComponents addObject:[NSString stringWithFormat:@"%@=\"%@\"", [subcomponents objectAtIndex:0], [subcomponents objectAtIndex:1]]];
+    }
+
+    return [NSString stringWithFormat:kAFOAuth1AuthorizationFormatString, [mutableComponents componentsJoinedByString:@", "]];
+}
+
+#pragma mark -
+
 - (void)authorizeUsingOAuthWithRequestTokenPath:(NSString *)requestTokenPath
                           userAuthorizationPath:(NSString *)userAuthorizationPath
                                     callbackURL:(NSURL *)callbackURL
@@ -234,7 +297,6 @@ static inline NSString * AFPlaintextSignature(NSString *consumerSecret, NSString
     [self acquireOAuthRequestTokenWithPath:requestTokenPath callback:callbackURL accessMethod:(NSString *)accessMethod success:^(AFOAuth1Token *requestToken) {
         __block AFOAuth1Token *currentRequestToken = requestToken;
         [[NSNotificationCenter defaultCenter] addObserverForName:kAFApplicationLaunchedWithURLNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *notification) {
-            
             NSURL *url = [[notification userInfo] valueForKey:kAFApplicationLaunchOptionsURLKey];
             
             currentRequestToken.verifier = [AFParametersFromQueryString([url query]) valueForKey:@"oauth_verifier"];
@@ -264,39 +326,6 @@ static inline NSString * AFPlaintextSignature(NSString *consumerSecret, NSString
             failure(error);
         }
     }];
-}
-
-- (NSDictionary *)OAuthParameters {
-    NSMutableDictionary *parameters = [NSMutableDictionary dictionary];
-    [parameters setValue:kAFOAuth1Version forKey:@"oauth_version"];
-    [parameters setValue:NSStringFromAFOAuthSignatureMethod(self.signatureMethod) forKey:@"oauth_signature_method"];
-    [parameters setValue:self.key forKey:@"oauth_consumer_key"];
-    [parameters setValue:[[NSNumber numberWithInteger:floorf([[NSDate date] timeIntervalSince1970])] stringValue] forKey:@"oauth_timestamp"];
-    [parameters setValue:AFNounce() forKey:@"oauth_nonce"];
-
-    if (self.realm) {
-        [parameters setValue:self.realm forKey:@"realm"];
-    }
-
-    return parameters;
-}
-
-- (NSString *)OAuthSignatureForMethod:(NSString *)method
-                                 path:(NSString *)path
-                           parameters:(NSDictionary *)parameters
-                         requestToken:(AFOAuth1Token *)requestToken
-{
-    NSMutableURLRequest *request = [super requestWithMethod:@"HEAD" path:path parameters:parameters];
-    [request setHTTPMethod:method];
-
-    switch (self.signatureMethod) {
-        case AFHMACSHA1SignatureMethod:
-            return AFHMACSHA1Signature(request, self.secret, requestToken ? requestToken.secret : nil, self.stringEncoding);
-        case AFPlaintextSignatureMethod:
-//            return AFPlaintextSignature(consumerSecret, requestTokenSecret, stringEncoding);
-        default:
-            return nil;
-    }
 }
 
 - (void)acquireOAuthRequestTokenWithPath:(NSString *)path
@@ -351,23 +380,7 @@ static inline NSString * AFPlaintextSignature(NSString *consumerSecret, NSString
     [self enqueueHTTPRequestOperation:operation];
 }
 
-- (NSString *)authorizationHeaderForParameters:(NSDictionary *)parameters {
-    if (!parameters) {
-        return nil;
-    }
-
-    NSArray *sortedComponents = [[AFQueryStringFromParametersWithEncoding(parameters, self.stringEncoding) componentsSeparatedByString:@"&"] sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)];
-    NSMutableArray *mutableComponents = [NSMutableArray array];
-    for (NSString *component in sortedComponents) {
-        NSArray *subcomponents = [component componentsSeparatedByString:@"="];
-        [mutableComponents addObject:[NSString stringWithFormat:@"%@=\"%@\"", [subcomponents objectAtIndex:0], [subcomponents objectAtIndex:1]]];
-    }
-
-    return [NSString stringWithFormat:@"OAuth %@", [mutableComponents componentsJoinedByString:@", "]];
-}
-
 #pragma mark - AFHTTPClient
-
 
 - (NSMutableURLRequest *)requestWithMethod:(NSString *)method
                                       path:(NSString *)path
@@ -381,7 +394,6 @@ static inline NSString * AFPlaintextSignature(NSString *consumerSecret, NSString
     }
 
     [mutableParameters setValue:[self OAuthSignatureForMethod:method path:path parameters:parameters requestToken:nil] forKey:@"oauth_signature"];
-
 
     NSMutableURLRequest *request = [super requestWithMethod:method path:path parameters:parameters];
     [request setValue:[self authorizationHeaderForParameters:mutableParameters] forHTTPHeaderField:@"Authorization"];

@@ -47,6 +47,10 @@ typedef enum {
  */
 @interface AFOAuth1Client : AFHTTPClient
 
+///-----------------------------------
+/// @name Managing OAuth Configuration
+///-----------------------------------
+
 /**
  
  */
@@ -67,10 +71,25 @@ typedef enum {
  */
 @property (nonatomic, strong) NSString *oauthAccessMethod;
 
+///---------------------
+/// @name Initialization
+///---------------------
+
+/**
+ 
+ */
 - (id)initWithBaseURL:(NSURL *)url
                   key:(NSString *)key
                secret:(NSString *)secret;
 
+///---------------------
+/// @name Authenticating
+///---------------------
+
+
+/**
+ 
+ */
 - (void)authorizeUsingOAuthWithRequestTokenPath:(NSString *)requestTokenPath
                           userAuthorizationPath:(NSString *)userAuthorizationPath
                                     callbackURL:(NSURL *)callbackURL
@@ -79,12 +98,18 @@ typedef enum {
                                         success:(void (^)(AFOAuth1Token *accessToken))success 
                                         failure:(void (^)(NSError *error))failure;
 
+/**
+ 
+ */
 - (void)acquireOAuthRequestTokenWithPath:(NSString *)path
                                 callback:(NSURL *)url
                             accessMethod:(NSString *)accessMethod
                                  success:(void (^)(AFOAuth1Token *requestToken))success 
                                  failure:(void (^)(NSError *error))failure;
 
+/**
+ 
+ */
 - (void)acquireOAuthAccessTokenWithPath:(NSString *)path
                            requestToken:(AFOAuth1Token *)requestToken
                            accessMethod:(NSString *)accessMethod
@@ -112,6 +137,13 @@ typedef enum {
 /// @name Constants
 ///----------------
 
-extern NSString * const kAFOAuth1Version;
+
+/**
+ 
+ */
 extern NSString * const kAFApplicationLaunchedWithURLNotification;
+
+/**
+ 
+ */
 extern NSString * const kAFApplicationLaunchOptionsURLKey;
