@@ -50,10 +50,8 @@ typedef enum {
 
 @property (nonatomic, assign) AFOAuthSignatureMethod signatureMethod;
 @property (nonatomic, copy) NSString *realm;
-@property (nonatomic, strong) AFOAuth1Token *accessToken;
+//@property (nonatomic, strong) AFOAuth1Token *accessToken;
 @property (nonatomic, strong) NSString *oauthAccessMethod;
-
-// TODO set Nonce generator block property?
 
 - (id)initWithBaseURL:(NSURL *)url
                   key:(NSString *)key
@@ -78,6 +76,9 @@ typedef enum {
                            accessMethod:(NSString *)accessMethod
                                 success:(void (^)(AFOAuth1Token *accessToken))success 
                                 failure:(void (^)(NSError *error))failure;
+
++ (NSString *)authorizationHeaderForParameters:(NSDictionary *)parameters
+                                     withToken:(AFOAuth1Token *)accessToken;
 
 #pragma mark -
 

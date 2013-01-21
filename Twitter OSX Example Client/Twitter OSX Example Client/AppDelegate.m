@@ -31,6 +31,7 @@
     [_twitterClient authorizeUsingOAuthWithRequestTokenPath:@"oauth/request_token" userAuthorizationPath:@"oauth/authorize" callbackURL:[NSURL URLWithString:@"af-twitter://success"] accessTokenPath:@"oauth/access_token" accessMethod:@"POST" success:^(AFOAuth1Token *accessToken) {
         NSLog(@"Success: %@", accessToken);
         NSLog(@"Your OAuth credentials are now set in the `Authorization` HTTP header");
+        [_twitterClient setAuthorizationHeaderWithToken:accessToken.key];
         
         [_twitterClient registerHTTPOperationClass:[AFJSONRequestOperation class]];
         [_twitterClient getPath:@"1/statuses/user_timeline.json" parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
