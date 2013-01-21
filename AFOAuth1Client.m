@@ -25,51 +25,45 @@
 
 #import <CommonCrypto/CommonHMAC.h>
 
-static const char _b64EncTable[64] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
-static inline NSString * AFEncodeBase64WithData(NSData *data) {
-    const unsigned char * rawData = [data bytes];
-    char * out;
-    char * result;
+static NSString * AFEncodeBase64WithData(NSData *data) {
+    NSUInteger length = [data length];
+    NSMutableData *mutableData = [NSMutableData dataWithLength:((length + 2) / 3) * 4];
     
-    int lenght = (int)[data length];
-    if (lenght == 0) return nil;
+    uint8_t *input = (uint8_t *)[data bytes];
+    uint8_t *output = (uint8_t *)[mutableData mutableBytes];
     
-    result = (char *)calloc((((lenght + 2) / 3) * 4) + 1, sizeof(char));
-    out = result;
-    
-    while (lenght > 2) {
-        *out++ = _b64EncTable[rawData[0] >> 2];
-        *out++ = _b64EncTable[((rawData[0] & 0x03) << 4) + (rawData[1] >> 4)];
-        *out++ = _b64EncTable[((rawData[1] & 0x0f) << 2) + (rawData[2] >> 6)];
-        *out++ = _b64EncTable[rawData[2] & 0x3f];
-        
-        rawData += 3;
-        lenght -= 3;
-    }
-    
-    if (lenght != 0) {
-        *out++ = _b64EncTable[rawData[0] >> 2];
-        if (lenght > 1) {
-            *out++ = _b64EncTable[((rawData[0] & 0x03) << 4) + (rawData[1] >> 4)];
-            *out++ = _b64EncTable[(rawData[1] & 0x0f) << 2];
-            *out++ = '=';
-        } else {
-            *out++ = _b64EncTable[(rawData[0] & 0x03) << 4];
-            *out++ = '=';
-            *out++ = '=';
+    for (NSUInteger i = 0; i < length; i += 3) {
+        NSUInteger value = 0;
+        for (NSUInteger j = i; j < (i + 3); j++) {
+            value <<= 8;
+            if (j < length) {
+                value |= (0xFF & input[j]);
+            }
         }
+        
+        static uint8_t const kAFBase64EncodingTable[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+        
+        NSUInteger idx = (i / 3) * 4;
+        output[idx + 0] = kAFBase64EncodingTable[(value >> 18) & 0x3F];
+        output[idx + 1] = kAFBase64EncodingTable[(value >> 12) & 0x3F];
+        output[idx + 2] = (i + 1) < length ? kAFBase64EncodingTable[(value >> 6)  & 0x3F] : '=';
+        output[idx + 3] = (i + 2) < length ? kAFBase64EncodingTable[(value >> 0)  & 0x3F] : '=';
     }
     
-    *out = '\0';
-    
-    return [NSString stringWithCString:result encoding:NSASCIIStringEncoding];
+    return [[NSString alloc] initWithData:mutableData encoding:NSASCIIStringEncoding];
 }
 
-static inline NSDictionary * AFParametersFromQueryString(NSString *queryString) {
+static NSString * AFPercentEscapedQueryStringPairMemberFromStringWithEncoding(NSString *string, NSStringEncoding encoding) {
+    static NSString * const kAFCharactersToBeEscaped = @":/?&=;+!@#$()~";
+    static NSString * const kAFCharactersToLeaveUnescaped = @"[].";
+    
+	return (__bridge_transfer  NSString *)CFURLCreateStringByAddingPercentEscapes(kCFAllocatorDefault, (__bridge CFStringRef)string, (__bridge CFStringRef)kAFCharactersToLeaveUnescaped, (__bridge CFStringRef)kAFCharactersToBeEscaped, CFStringConvertNSStringEncodingToEncoding(encoding));
+}
+
+static NSDictionary * AFParametersFromQueryString(NSString *queryString) {
     NSMutableDictionary *parameters = [NSMutableDictionary dictionary];
     if (queryString) {
-        NSScanner *parameterScanner = [[[NSScanner alloc] initWithString:queryString] autorelease];
+        NSScanner *parameterScanner = [[NSScanner alloc] initWithString:queryString];
         NSString *name = nil;
         NSString *value = nil;
         
@@ -100,7 +94,7 @@ static inline BOOL AFQueryStringValueIsTrue(NSString *value) {
 @property (readwrite, nonatomic, copy) NSString *secret;
 @property (readwrite, nonatomic, copy) NSString *session;
 @property (readwrite, nonatomic, copy) NSString *verifier;
-@property (readwrite, nonatomic, retain) NSDate *expiration;
+@property (readwrite, nonatomic, strong) NSDate *expiration;
 @property (readwrite, nonatomic, assign, getter = canBeRenewed) BOOL renewable;
 @end
 
@@ -121,16 +115,16 @@ static inline BOOL AFQueryStringValueIsTrue(NSString *value) {
     
     NSDictionary *attributes = AFParametersFromQueryString(queryString);
     
-    self.key = [attributes objectForKey:@"oauth_token"];
-    self.secret = [attributes objectForKey:@"oauth_token_secret"];
-    self.session = [attributes objectForKey:@"oauth_session_handle"];
+    self.key = attributes[@"oauth_token"];
+    self.secret = attributes[@"oauth_token_secret"];
+    self.session = attributes[@"oauth_session_handle"];
     
-    if ([attributes objectForKey:@"oauth_token_duration"]) {
-        self.expiration = [NSDate dateWithTimeIntervalSinceNow:[[attributes objectForKey:@"oauth_token_duration"] doubleValue]];
+    if (attributes[@"oauth_token_duration"]) {
+        self.expiration = [NSDate dateWithTimeIntervalSinceNow:[attributes[@"oauth_token_duration"] doubleValue]];
     }
     
-    if ([attributes objectForKey:@"oauth_token_renewable"]) {
-        self.renewable = AFQueryStringValueIsTrue([attributes objectForKey:@"oauth_token_renewable"]);
+    if (attributes[@"oauth_token_renewable"]) {
+        self.renewable = AFQueryStringValueIsTrue(attributes[@"oauth_token_renewable"]);
     }
     
     return self;
@@ -153,7 +147,7 @@ static inline NSString * AFNounce() {
     CFUUIDRef uuid = CFUUIDCreate(NULL);
     CFStringRef string = CFUUIDCreateString(NULL, uuid);
     CFRelease(uuid);
-    return [(NSString *)string autorelease];
+    return (NSString *)CFBridgingRelease(string);
 }
 
 static inline NSString * NSStringFromAFOAuthSignatureMethod(AFOAuthSignatureMethod signatureMethod) {
@@ -175,9 +169,9 @@ static inline NSString * AFHMACSHA1SignatureWithConsumerSecretAndRequestTokenSec
     NSString *secretString = [NSString stringWithFormat:@"%@&%@", consumerSecret, reqSecret];
     NSData *secretStringData = [secretString dataUsingEncoding:stringEncoding];
     
-    NSString *queryString = AFURLEncodedStringFromStringWithEncoding([[[[[request URL] query] componentsSeparatedByString:@"&"] sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)] componentsJoinedByString:@"&"], stringEncoding);
+    NSString *queryString = AFPercentEscapedQueryStringPairMemberFromStringWithEncoding([[[[[request URL] query] componentsSeparatedByString:@"&"] sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)] componentsJoinedByString:@"&"], stringEncoding);
     
-    NSString *requestString = [NSString stringWithFormat:@"%@&%@&%@", [request HTTPMethod], AFURLEncodedStringFromStringWithEncoding([[[[request URL] absoluteString] componentsSeparatedByString:@"?"] objectAtIndex:0], stringEncoding), queryString];
+    NSString *requestString = [NSString stringWithFormat:@"%@&%@&%@", [request HTTPMethod], AFPercentEscapedQueryStringPairMemberFromStringWithEncoding([[[request URL] absoluteString] componentsSeparatedByString:@"?"][0], stringEncoding), queryString];
     NSData *requestStringData = [requestString dataUsingEncoding:stringEncoding];
     
     // hmac
@@ -275,13 +269,6 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
     return self;
 }
 
-- (void)dealloc {
-    [_key release];
-    [_secret release];
-    [_serviceProviderIdentifier release];
-    [_realm release];
-    [super dealloc];
-}
 
 - (void)authorizeUsingOAuthWithRequestTokenPath:(NSString *)requestTokenPath
                           userAuthorizationPath:(NSString *)userAuthorizationPath
@@ -358,7 +345,7 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
     NSMutableArray *mutableComponents = [NSMutableArray array];
     for (NSString *component in sortedComponents) {
         NSArray *subcomponents = [component componentsSeparatedByString:@"="];
-        [mutableComponents addObject:[NSString stringWithFormat:@"%@=\"%@\"", [subcomponents objectAtIndex:0], [subcomponents objectAtIndex:1]]];
+        [mutableComponents addObject:[NSString stringWithFormat:@"%@=\"%@\"", subcomponents[0], subcomponents[1]]];
     }
     
     NSString *oauthString = [NSString stringWithFormat:@"OAuth %@", [mutableComponents componentsJoinedByString:@", "]];
@@ -374,7 +361,7 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
         NSLog(@"Success: %@", operation.responseString);
         
         if (success) {
-            AFOAuth1Token *requestToken = [[[AFOAuth1Token alloc] initWithQueryString:operation.responseString] autorelease];
+            AFOAuth1Token *requestToken = [[AFOAuth1Token alloc] initWithQueryString:operation.responseString];
             success(requestToken);
         }
     };
@@ -414,7 +401,7 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
         [parameters setValue:self.realm forKey:@"realm"];
     }
     
-    NSMutableURLRequest *mutableRequest = [self requestWithMethod:accessMethod path:path parameters:parameters];
+    NSMutableURLRequest *mutableRequest = [self requestWithMethod:@"GET" path:path parameters:parameters];
     [mutableRequest setHTTPMethod:accessMethod];
     [parameters setValue:AFSignatureUsingMethodWithSignatureWithConsumerSecretAndRequestTokenSecret(mutableRequest, self.signatureMethod, self.secret, requestToken.secret, self.stringEncoding) forKey:@"oauth_signature"];
     
@@ -422,7 +409,7 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
     NSMutableArray *mutableComponents = [NSMutableArray array];
     for (NSString *component in sortedComponents) {
         NSArray *subcomponents = [component componentsSeparatedByString:@"="];
-        [mutableComponents addObject:[NSString stringWithFormat:@"%@=\"%@\"", [subcomponents objectAtIndex:0], [subcomponents objectAtIndex:1]]];
+        [mutableComponents addObject:[NSString stringWithFormat:@"%@=\"%@\"", subcomponents[0], subcomponents[1]]];
     }
     
     NSString *oauthString = [NSString stringWithFormat:@"OAuth %@", [mutableComponents componentsJoinedByString:@", "]];
@@ -438,7 +425,7 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
         NSLog(@"Success: %@", operation.responseString);
         
         if (success) {
-            AFOAuth1Token *accessToken = [[[AFOAuth1Token alloc] initWithQueryString:operation.responseString] autorelease];
+            AFOAuth1Token *accessToken = [[AFOAuth1Token alloc] initWithQueryString:operation.responseString];
             self.accessToken = accessToken;
             success(accessToken);
         }
@@ -563,14 +550,14 @@ static inline NSString * AFSignatureUsingMethodWithSignatureWithConsumerSecretAn
     NSMutableArray *mutableComponents = [NSMutableArray array];
     for (NSString *component in sortedComponents) {
         NSArray *subcomponents = [component componentsSeparatedByString:@"="];
-        [mutableComponents addObject:[NSString stringWithFormat:@"%@=\"%@\"", [subcomponents objectAtIndex:0], [subcomponents objectAtIndex:1]]];
+        [mutableComponents addObject:[NSString stringWithFormat:@"%@=\"%@\"", subcomponents[0], subcomponents[1]]];
     }
     
     NSString *oauthString = [NSString stringWithFormat:@"OAuth %@", [mutableComponents componentsJoinedByString:@", "]];
     
     NSLog(@"OAuth: %@", oauthString);
     
-     [self setDefaultHeader:@"Authorization" value:oauthString];
+    [self setDefaultHeader:@"Authorization" value:oauthString];
 }
 
 - (void) signCallPerAuthHeaderWithPath:(NSString *)path andParameters:(NSDictionary *)parameters andMethod:(NSString *)method {

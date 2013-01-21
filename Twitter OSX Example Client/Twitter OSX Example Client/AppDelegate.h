@@ -2,8 +2,8 @@
 //  AppDelegate.h
 //  Twitter OSX Example Client
 //
-//  Created by Enrico "cHoco" Ghirardi on 01/08/12.
-//  Copyright (c) 2012 Just a Dream. All rights reserved.
+//  Created by Enrico Ghirardi on 02/01/13.
+//  Copyright (c) 2013 Just a Dream. All rights reserved.
 //
 
 #import <Cocoa/Cocoa.h>
@@ -13,7 +13,7 @@
 
 @interface AppDelegate : NSObject <NSApplicationDelegate>
 
-@property (assign) IBOutlet NSWindow *window;
-@property (retain) AFOAuth1Client *twitterClient;
+@property (weak) IBOutlet NSWindow *window;
+@property (strong) AFOAuth1Client *twitterClient;
 
 @end
