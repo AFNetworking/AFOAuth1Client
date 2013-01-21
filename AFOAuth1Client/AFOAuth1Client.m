@@ -109,41 +109,27 @@ static inline NSString * NSStringFromAFOAuthSignatureMethod(AFOAuthSignatureMeth
     switch (signatureMethod) {
         case AFHMACSHA1SignatureMethod:
             return @"HMAC-SHA1";
-        case AFPlaintextSignatureMethod:
-            return @"PLAINTEXT";
         default:
             return nil;
     }
 }
 
-static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *consumerSecret, NSString *requestTokenSecret, NSStringEncoding stringEncoding) {
-    NSString* reqSecret = @"";
-    if (requestTokenSecret != nil) {
-        reqSecret = requestTokenSecret;
-    }
-    NSString *secretString = [NSString stringWithFormat:@"%@&%@", consumerSecret, reqSecret];
+static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *consumerSecret, NSString *tokenSecret, NSStringEncoding stringEncoding) {
+    NSString *secret = tokenSecret ? tokenSecret : @"";
+    NSString *secretString = [NSString stringWithFormat:@"%@&%@", consumerSecret, secret];
     NSData *secretStringData = [secretString dataUsingEncoding:stringEncoding];
     
     NSString *queryString = AFPercentEscapedQueryStringPairMemberFromStringWithEncoding([[[[[request URL] query] componentsSeparatedByString:@"&"] sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)] componentsJoinedByString:@"&"], stringEncoding);
-    
     NSString *requestString = [NSString stringWithFormat:@"%@&%@&%@", [request HTTPMethod], AFPercentEscapedQueryStringPairMemberFromStringWithEncoding([[[request URL] absoluteString] componentsSeparatedByString:@"?"][0], stringEncoding), queryString];
     NSData *requestStringData = [requestString dataUsingEncoding:stringEncoding];
     
-    // hmac
     uint8_t digest[CC_SHA1_DIGEST_LENGTH];
     CCHmacContext cx;
     CCHmacInit(&cx, kCCHmacAlgSHA1, [secretStringData bytes], [secretStringData length]);
     CCHmacUpdate(&cx, [requestStringData bytes], [requestStringData length]);
     CCHmacFinal(&cx, digest);
     
-    // base 64
-    NSData *data = [NSData dataWithBytes:digest length:CC_SHA1_DIGEST_LENGTH];
-    return AFEncodeBase64WithData(data);
-}
-
-static inline NSString * AFPlaintextSignature(NSString *consumerSecret, NSString *requestTokenSecret, NSStringEncoding stringEncoding) {
-    // TODO
-    return nil;
+    return AFEncodeBase64WithData([NSData dataWithBytes:digest length:CC_SHA1_DIGEST_LENGTH]);
 }
 
 #pragma mark -
@@ -226,7 +212,9 @@ static inline NSString * AFPlaintextSignature(NSString *consumerSecret, NSString
     
     self.key = clientID;
     self.secret = secret;
-            
+
+    self.signatureMethod = AFHMACSHA1SignatureMethod;
+
     self.oauthAccessMethod = @"GET";
     
     return self;
@@ -260,8 +248,6 @@ static inline NSString * AFPlaintextSignature(NSString *consumerSecret, NSString
     switch (self.signatureMethod) {
         case AFHMACSHA1SignatureMethod:
             return AFHMACSHA1Signature(request, self.secret, tokenSecret, self.stringEncoding);
-        case AFPlaintextSignatureMethod:
-            return AFPlaintextSignature(self.secret, tokenSecret, self.stringEncoding);
         default:
             return nil;
     }
