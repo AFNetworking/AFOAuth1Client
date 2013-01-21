@@ -1,7 +1,3 @@
-//
-// Prefix header for all source files of the 'Twitter OSX Example Client' target in the 'Twitter OSX Example Client' project
-//
-
 #ifdef __OBJC__
     #import <Cocoa/Cocoa.h>
 #endif

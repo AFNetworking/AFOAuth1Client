@@ -11,7 +11,6 @@
 		3B95200016944D5B00BAF7F8 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 3B951FFF16944D5B00BAF7F8 /* main.m */; };
 		3B95200716944D5B00BAF7F8 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 3B95200616944D5B00BAF7F8 /* AppDelegate.m */; };
 		3B95200A16944D5B00BAF7F8 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 3B95200816944D5B00BAF7F8 /* MainMenu.xib */; };
-		3B95201216944D7000BAF7F8 /* AFOAuth1Client.m in Sources */ = {isa = PBXBuildFile; fileRef = 3B95201116944D7000BAF7F8 /* AFOAuth1Client.m */; };
 		3B95202716944D7900BAF7F8 /* AFHTTPClient.m in Sources */ = {isa = PBXBuildFile; fileRef = 3B95201516944D7900BAF7F8 /* AFHTTPClient.m */; };
 		3B95202816944D7900BAF7F8 /* AFHTTPRequestOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 3B95201716944D7900BAF7F8 /* AFHTTPRequestOperation.m */; };
 		3B95202916944D7900BAF7F8 /* AFImageRequestOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 3B95201916944D7900BAF7F8 /* AFImageRequestOperation.m */; };
@@ -21,6 +20,7 @@
 		3B95202D16944D7900BAF7F8 /* AFURLConnectionOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 3B95202216944D7900BAF7F8 /* AFURLConnectionOperation.m */; };
 		3B95202E16944D7900BAF7F8 /* AFXMLRequestOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 3B95202416944D7900BAF7F8 /* AFXMLRequestOperation.m */; };
 		3B95202F16944D7900BAF7F8 /* UIImageView+AFNetworking.m in Sources */ = {isa = PBXBuildFile; fileRef = 3B95202616944D7900BAF7F8 /* UIImageView+AFNetworking.m */; };
+		F8E8694C16ADDA2800CD328E /* AFOAuth1Client.m in Sources */ = {isa = PBXBuildFile; fileRef = F8E8694B16ADDA2800CD328E /* AFOAuth1Client.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -35,8 +35,6 @@
 		3B95200516944D5B00BAF7F8 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		3B95200616944D5B00BAF7F8 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
 		3B95200916944D5B00BAF7F8 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/MainMenu.xib; sourceTree = "<group>"; };
-		3B95201016944D7000BAF7F8 /* AFOAuth1Client.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AFOAuth1Client.h; path = ../../AFOAuth1Client.h; sourceTree = "<group>"; };
-		3B95201116944D7000BAF7F8 /* AFOAuth1Client.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = AFOAuth1Client.m; path = ../../AFOAuth1Client.m; sourceTree = "<group>"; };
 		3B95201416944D7900BAF7F8 /* AFHTTPClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AFHTTPClient.h; sourceTree = "<group>"; };
 		3B95201516944D7900BAF7F8 /* AFHTTPClient.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AFHTTPClient.m; sourceTree = "<group>"; };
 		3B95201616944D7900BAF7F8 /* AFHTTPRequestOperation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AFHTTPRequestOperation.h; sourceTree = "<group>"; };
@@ -56,6 +54,8 @@
 		3B95202416944D7900BAF7F8 /* AFXMLRequestOperation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AFXMLRequestOperation.m; sourceTree = "<group>"; };
 		3B95202516944D7900BAF7F8 /* UIImageView+AFNetworking.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIImageView+AFNetworking.h"; sourceTree = "<group>"; };
 		3B95202616944D7900BAF7F8 /* UIImageView+AFNetworking.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UIImageView+AFNetworking.m"; sourceTree = "<group>"; };
+		F8E8694A16ADDA2800CD328E /* AFOAuth1Client.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AFOAuth1Client.h; sourceTree = "<group>"; };
+		F8E8694B16ADDA2800CD328E /* AFOAuth1Client.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AFOAuth1Client.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -110,8 +110,6 @@
 		3B951FF916944D5B00BAF7F8 /* Twitter OSX Example Client */ = {
 			isa = PBXGroup;
 			children = (
-				3B95201016944D7000BAF7F8 /* AFOAuth1Client.h */,
-				3B95201116944D7000BAF7F8 /* AFOAuth1Client.m */,
 				3B95200516944D5B00BAF7F8 /* AppDelegate.h */,
 				3B95200616944D5B00BAF7F8 /* AppDelegate.m */,
 				3B95200816944D5B00BAF7F8 /* MainMenu.xib */,
@@ -160,9 +158,20 @@
 		F86035CE16ADCCC60027FDE8 /* Vendor */ = {
 			isa = PBXGroup;
 			children = (
+				F8E8694916ADDA2800CD328E /* AFOAuth1Client */,
 				3B95201316944D7900BAF7F8 /* AFNetworking */,
 			);
 			name = Vendor;
+			sourceTree = "<group>";
+		};
+		F8E8694916ADDA2800CD328E /* AFOAuth1Client */ = {
+			isa = PBXGroup;
+			children = (
+				F8E8694A16ADDA2800CD328E /* AFOAuth1Client.h */,
+				F8E8694B16ADDA2800CD328E /* AFOAuth1Client.m */,
+			);
+			name = AFOAuth1Client;
+			path = ../AFOAuth1Client;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -229,7 +238,6 @@
 			files = (
 				3B95200016944D5B00BAF7F8 /* main.m in Sources */,
 				3B95200716944D5B00BAF7F8 /* AppDelegate.m in Sources */,
-				3B95201216944D7000BAF7F8 /* AFOAuth1Client.m in Sources */,
 				3B95202716944D7900BAF7F8 /* AFHTTPClient.m in Sources */,
 				3B95202816944D7900BAF7F8 /* AFHTTPRequestOperation.m in Sources */,
 				3B95202916944D7900BAF7F8 /* AFImageRequestOperation.m in Sources */,
@@ -239,6 +247,7 @@
 				3B95202D16944D7900BAF7F8 /* AFURLConnectionOperation.m in Sources */,
 				3B95202E16944D7900BAF7F8 /* AFXMLRequestOperation.m in Sources */,
 				3B95202F16944D7900BAF7F8 /* UIImageView+AFNetworking.m in Sources */,
+				F8E8694C16ADDA2800CD328E /* AFOAuth1Client.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

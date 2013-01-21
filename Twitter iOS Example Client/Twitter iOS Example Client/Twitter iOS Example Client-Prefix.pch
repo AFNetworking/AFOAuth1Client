@@ -1,7 +1,3 @@
-//
-// Prefix header for all source files of the 'Twitter iOS Example Client' target in the 'Twitter iOS Example Client' project
-//
-
 #import <Availability.h>
 
 #ifndef __IPHONE_3_0
@@ -11,4 +7,6 @@
 #ifdef __OBJC__
     #import <UIKit/UIKit.h>
     #import <Foundation/Foundation.h>
+    #import <SystemConfiguration/SystemConfiguration.h>
+    #import <MobileCoreServices/MobileCoreServices.h>
 #endif

@@ -22,19 +22,6 @@
 
 #import "AFHTTPClient.h"
 
-enum {
-	AFOAuthSignatureMethodRejected = 0,
-	AFOAuthParameterAbsent,
-	AFOAuthVersionRejected,
-	AFOAuthConsumerKeyUnknown,
-	AFOAuthTokenRejected,
-	AFOAuthSignatureInvalid,
-	AFOAuthNonceUsed,
-	AFOAuthTimestampRefused,
-	AFOAuthTokenExpired,
-	AFOAuthTokenNotRenewable,
-};
-
 typedef enum {
     AFHMACSHA1SignatureMethod = 0,
     AFPlaintextSignatureMethod,
