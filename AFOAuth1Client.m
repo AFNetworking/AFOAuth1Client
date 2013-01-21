@@ -194,13 +194,6 @@ static inline NSString * AFPlaintextSignature(NSString *consumerSecret, NSString
 @interface AFOAuth1Client ()
 @property (readwrite, nonatomic, copy) NSString *key;
 @property (readwrite, nonatomic, copy) NSString *secret;
-
-- (void) signCallPerAuthHeaderWithPath:(NSString *)path 
-                         andParameters:(NSDictionary *)parameters 
-                             andMethod:(NSString *)method ;
-- (NSDictionary *) signCallWithHttpGetWithPath:(NSString *)path 
-                                 andParameters:(NSDictionary *)parameters 
-                                     andMethod:(NSString *)method ;
 @end
 
 @implementation AFOAuth1Client
@@ -247,6 +240,8 @@ static inline NSString * AFPlaintextSignature(NSString *consumerSecret, NSString
             currentRequestToken.verifier = [AFParametersFromQueryString([url query]) valueForKey:@"oauth_verifier"];
                         
             [self acquireOAuthAccessTokenWithPath:accessTokenPath requestToken:currentRequestToken accessMethod:accessMethod success:^(AFOAuth1Token * accessToken) {
+                self.accessToken = accessToken;
+
                 if (success) {
                     success(accessToken);
                 }
@@ -291,7 +286,7 @@ static inline NSString * AFPlaintextSignature(NSString *consumerSecret, NSString
                            parameters:(NSDictionary *)parameters
                          requestToken:(AFOAuth1Token *)requestToken
 {
-    NSMutableURLRequest *request = [self requestWithMethod:@"HEAD" path:path parameters:parameters];
+    NSMutableURLRequest *request = [super requestWithMethod:@"HEAD" path:path parameters:parameters];
     [request setHTTPMethod:method];
 
     switch (self.signatureMethod) {
@@ -312,12 +307,9 @@ static inline NSString * AFPlaintextSignature(NSString *consumerSecret, NSString
 {    
     NSMutableDictionary *parameters = [[self OAuthParameters] mutableCopy];
     [parameters setValue:[callbackURL absoluteString] forKey:@"oauth_callback"];
-    
-    [parameters setValue:[self OAuthSignatureForMethod:accessMethod path:path parameters:parameters requestToken:nil] forKey:@"oauth_signature"];
 
     NSMutableURLRequest *request = [self requestWithMethod:accessMethod path:path parameters:parameters];
     [request setHTTPBody:nil];
-    [request setValue:[self authorizationHeaderForParameters:parameters] forHTTPHeaderField:@"Authorization"];
 
     AFHTTPRequestOperation *operation = [self HTTPRequestOperationWithRequest:request success:^(AFHTTPRequestOperation *operation, id responseObject) {
         if (success) {
@@ -343,10 +335,7 @@ static inline NSString * AFPlaintextSignature(NSString *consumerSecret, NSString
     [parameters setValue:requestToken.key forKey:@"oauth_token"];
     [parameters setValue:requestToken.verifier forKey:@"oauth_verifier"];
 
-    [parameters setValue:[self OAuthSignatureForMethod:accessMethod path:path parameters:parameters requestToken:requestToken] forKey:@"oauth_signature"];
-
     NSMutableURLRequest *request = [self requestWithMethod:accessMethod path:path parameters:parameters];
-    [request setValue:[self authorizationHeaderForParameters:parameters] forHTTPHeaderField:@"Authorization"];
 
     AFHTTPRequestOperation *operation = [self HTTPRequestOperationWithRequest:request success:^(AFHTTPRequestOperation *operation, id responseObject) {
         if (success) {
@@ -363,6 +352,10 @@ static inline NSString * AFPlaintextSignature(NSString *consumerSecret, NSString
 }
 
 - (NSString *)authorizationHeaderForParameters:(NSDictionary *)parameters {
+    if (!parameters) {
+        return nil;
+    }
+
     NSArray *sortedComponents = [[AFQueryStringFromParametersWithEncoding(parameters, self.stringEncoding) componentsSeparatedByString:@"&"] sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)];
     NSMutableArray *mutableComponents = [NSMutableArray array];
     for (NSString *component in sortedComponents) {
@@ -375,49 +368,26 @@ static inline NSString * AFPlaintextSignature(NSString *consumerSecret, NSString
 
 #pragma mark - AFHTTPClient
 
+
 - (NSMutableURLRequest *)requestWithMethod:(NSString *)method
                                       path:(NSString *)path
                                 parameters:(NSDictionary *)parameters
 {
+    NSMutableDictionary *mutableParameters = parameters ? [parameters mutableCopy] : [NSMutableDictionary dictionary];
+
+    if (self.accessToken) {
+        [mutableParameters addEntriesFromDictionary:[self OAuthParameters]];
+        [mutableParameters setValue:self.accessToken.key forKey:@"oauth_token"];
+    }
+
+    [mutableParameters setValue:[self OAuthSignatureForMethod:method path:path parameters:parameters requestToken:nil] forKey:@"oauth_signature"];
+
+
     NSMutableURLRequest *request = [super requestWithMethod:method path:path parameters:parameters];
+    [request setValue:[self authorizationHeaderForParameters:mutableParameters] forHTTPHeaderField:@"Authorization"];
     [request setHTTPShouldHandleCookies:NO];
 
     return request;
 }
-
-//- (AFHTTPRequestOperation *)HTTPRequestOperationWithRequest:(NSURLRequest *)urlRequest
-//                                                    success:(void (^)(AFHTTPRequestOperation *, id))success
-//                                                    failure:(void (^)(AFHTTPRequestOperation *, NSError *))failure
-//{
-//    if (self.accessToken) {
-//        if ([self.oauthAccessMethod isEqualToString:@"GET"])
-//            parameters = [self signCallWithHttpGetWithPath:path andParameters:parameters andMethod:@"GET"];
-//        else
-//            [self signCallPerAuthHeaderWithPath:path andParameters:parameters andMethod:@"GET"];
-//    }
-//
-//    AFHTTPRequestOperation *operation = [super HTTPRequestOperationWithRequest:urlRequest success:success failure:failure];
-//}
-
-//- (void) signCallPerAuthHeaderWithPath:(NSString *)path usingParameters:(NSMutableDictionary *)parameters andMethod:(NSString *)method {
-//    NSMutableURLRequest *request = [self requestWithMethod:@"GET" path:path parameters:parameters];
-//    [request setHTTPMethod:method];
-////    [parameters setValue:AFSignatureUsingMethodWithSignatureWithConsumerSecretAndRequestTokenSecret(request, self.signatureMethod, self.secret, self.accessToken.secret, self.stringEncoding) forKey:@"oauth_signature"];
-//
-//    
-//    NSArray *sortedComponents = [[AFQueryStringFromParametersWithEncoding(parameters, self.stringEncoding) componentsSeparatedByString:@"&"] sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)];
-//    NSMutableArray *mutableComponents = [NSMutableArray array];
-//    for (NSString *component in sortedComponents) {
-//        NSArray *subcomponents = [component componentsSeparatedByString:@"="];
-//        [mutableComponents addObject:[NSString stringWithFormat:@"%@=\"%@\"", subcomponents[0], subcomponents[1]]];
-//    }
-//    
-//    NSString *oauthString = [NSString stringWithFormat:@"OAuth %@", [mutableComponents componentsJoinedByString:@", "]];
-//    
-//    NSLog(@"OAuth: %@", oauthString);
-//    
-//    [self setDefaultHeader:@"Authorization" value:oauthString];
-//}
-//
 
 @end
