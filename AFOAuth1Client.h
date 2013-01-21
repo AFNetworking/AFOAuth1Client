@@ -22,10 +22,6 @@
 
 #import "AFHTTPClient.h"
 
-extern NSString * const kAFOAuth1Version;
-extern NSString * const kAFApplicationLaunchedWithURLNotification;
-extern NSString * const kAFApplicationLaunchOptionsURLKey;
-
 enum {
 	AFOAuthSignatureMethodRejected = 0,
 	AFOAuthParameterAbsent,
@@ -46,11 +42,29 @@ typedef enum {
 
 @class AFOAuth1Token;
 
+/**
+ 
+ */
 @interface AFOAuth1Client : AFHTTPClient
 
+/**
+ 
+ */
 @property (nonatomic, assign) AFOAuthSignatureMethod signatureMethod;
+
+/**
+ 
+ */
 @property (nonatomic, copy) NSString *realm;
-//@property (nonatomic, strong) AFOAuth1Token *accessToken;
+
+/**
+ 
+ */
+@property (nonatomic, strong) AFOAuth1Token *accessToken;
+
+/**
+ 
+ */
 @property (nonatomic, strong) NSString *oauthAccessMethod;
 
 - (id)initWithBaseURL:(NSURL *)url
@@ -77,104 +91,11 @@ typedef enum {
                                 success:(void (^)(AFOAuth1Token *accessToken))success 
                                 failure:(void (^)(NSError *error))failure;
 
-+ (NSString *)authorizationHeaderForParameters:(NSDictionary *)parameters
-                                     withToken:(AFOAuth1Token *)accessToken;
-
-#pragma mark -
-
-///---------------------------
-/// @name Making HTTP Requests
-///---------------------------
-
-/**
- Creates an `AFHTTPRequestOperation` with a `GET` request, and enqueues it to the HTTP client's operation queue.
- 
- @param path The path to be appended to the HTTP client's base URL and used as the request URL.
- @param parameters The parameters to be encoded and appended as the query string for the request URL.
- @param success A block object to be executed when the request operation finishes successfully. This block has no return value and takes two arguments: the created request operation and the object created from the response data of request.
- @param failure A block object to be executed when the request operation finishes unsuccessfully, or that finishes successfully, but encountered an error while parsing the resonse data. This block has no return value and takes two arguments:, the created request operation and the `NSError` object describing the network or parsing error that occurred.
- 
- @see HTTPRequestOperationWithRequest:success:failure
- */
-- (void)getPath:(NSString *)path
-     parameters:(NSDictionary *)parameters
-        success:(void (^)(AFHTTPRequestOperation *operation, id responseObject))success
-        failure:(void (^)(AFHTTPRequestOperation *operation, NSError *error))failure;
-
-/**
- Creates an `AFHTTPRequestOperation` with a `POST` request, and enqueues it to the HTTP client's operation queue.
- 
- @param path The path to be appended to the HTTP client's base URL and used as the request URL.
- @param parameters The parameters to be encoded and set in the request HTTP body.
- @param success A block object to be executed when the request operation finishes successfully. This block has no return value and takes two arguments: the created request operation and the object created from the response data of request.
- @param failure A block object to be executed when the request operation finishes unsuccessfully, or that finishes successfully, but encountered an error while parsing the resonse data. This block has no return value and takes two arguments:, the created request operation and the `NSError` object describing the network or parsing error that occurred.
- 
- @see HTTPRequestOperationWithRequest:success:failure
- */
-- (void)postPath:(NSString *)path 
-      parameters:(NSDictionary *)parameters 
-         success:(void (^)(AFHTTPRequestOperation *operation, id responseObject))success
-         failure:(void (^)(AFHTTPRequestOperation *operation, NSError *error))failure;
-
-/**
- Creates an `AFHTTPRequestOperation` with a `PUT` request, and enqueues it to the HTTP client's operation queue.
- 
- @param path The path to be appended to the HTTP client's base URL and used as the request URL.
- @param parameters The parameters to be encoded and set in the request HTTP body.
- @param success A block object to be executed when the request operation finishes successfully. This block has no return value and takes two arguments: the created request operation and the object created from the response data of request.
- @param failure A block object to be executed when the request operation finishes unsuccessfully, or that finishes successfully, but encountered an error while parsing the resonse data. This block has no return value and takes two arguments:, the created request operation and the `NSError` object describing the network or parsing error that occurred.
- 
- @see HTTPRequestOperationWithRequest:success:failure
- */
-- (void)putPath:(NSString *)path 
-     parameters:(NSDictionary *)parameters 
-        success:(void (^)(AFHTTPRequestOperation *operation, id responseObject))success
-        failure:(void (^)(AFHTTPRequestOperation *operation, NSError *error))failure;
-
-/**
- Creates an `AFHTTPRequestOperation` with a `DELETE` request, and enqueues it to the HTTP client's operation queue.
- 
- @param path The path to be appended to the HTTP client's base URL and used as the request URL.
- @param parameters The parameters to be encoded and set in the request HTTP body.
- @param success A block object to be executed when the request operation finishes successfully. This block has no return value and takes two arguments: the created request operation and the object created from the response data of request.
- @param failure A block object to be executed when the request operation finishes unsuccessfully, or that finishes successfully, but encountered an error while parsing the resonse data. This block has no return value and takes two arguments:, the created request operation and the `NSError` object describing the network or parsing error that occurred.
- 
- @see HTTPRequestOperationWithRequest:success:failure
- */
-- (void)deletePath:(NSString *)path 
-        parameters:(NSDictionary *)parameters 
-           success:(void (^)(AFHTTPRequestOperation *operation, id responseObject))success
-           failure:(void (^)(AFHTTPRequestOperation *operation, NSError *error))failure;
-
-/**
- Creates an `AFHTTPRequestOperation` with a `PATCH` request, and enqueues it to the HTTP client's operation queue.
- 
- @param path The path to be appended to the HTTP client's base URL and used as the request URL.
- @param parameters The parameters to be encoded and set in the request HTTP body.
- @param success A block object to be executed when the request operation finishes successfully. This block has no return value and takes two arguments: the created request operation and the object created from the response data of request.
- @param failure A block object to be executed when the request operation finishes unsuccessfully, or that finishes successfully, but encountered an error while parsing the resonse data. This block has no return value and takes two arguments:, the created request operation and the `NSError` object describing the network or parsing error that occurred.
- 
- @see HTTPRequestOperationWithRequest:success:failure
- */
-- (void)patchPath:(NSString *)path
-       parameters:(NSDictionary *)parameters 
-          success:(void (^)(AFHTTPRequestOperation *operation, id responseObject))success
-          failure:(void (^)(AFHTTPRequestOperation *operation, NSError *error))failure;
-
-
 @end
 
 #pragma mark -
 
-@interface AFOAuth1Token : NSObject {
-@private
-	NSString *_key;
-	NSString *_secret;
-    NSString *_verifier;
-	NSString *_session;
-	NSDate *_expiration;
-    BOOL _renewable;
-}
+@interface AFOAuth1Token : NSObject
 
 @property (readonly, nonatomic, copy) NSString *key;
 @property (readonly, nonatomic, copy) NSString *secret;
@@ -186,3 +107,11 @@ typedef enum {
 - (id)initWithQueryString:(NSString *)queryString;
 
 @end
+
+///----------------
+/// @name Constants
+///----------------
+
+extern NSString * const kAFOAuth1Version;
+extern NSString * const kAFApplicationLaunchedWithURLNotification;
+extern NSString * const kAFApplicationLaunchOptionsURLKey;
