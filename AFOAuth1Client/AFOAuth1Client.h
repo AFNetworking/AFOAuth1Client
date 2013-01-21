@@ -104,25 +104,9 @@ typedef enum {
 
 @end
 
-#pragma mark -
-
-@interface AFOAuth1Token : NSObject
-
-@property (readonly, nonatomic, copy) NSString *key;
-@property (readonly, nonatomic, copy) NSString *secret;
-@property (readonly, nonatomic, copy) NSString *verifier;
-@property (readonly, nonatomic, copy) NSString *session;
-@property (readonly, nonatomic, assign, getter = canBeRenewed) BOOL renewable;
-@property (readonly, nonatomic, assign, getter = isExpired) BOOL expired;
-
-- (id)initWithQueryString:(NSString *)queryString;
-
-@end
-
 ///----------------
 /// @name Constants
 ///----------------
-
 
 /**
  
@@ -133,3 +117,47 @@ extern NSString * const kAFApplicationLaunchedWithURLNotification;
  
  */
 extern NSString * const kAFApplicationLaunchOptionsURLKey;
+
+#pragma mark -
+
+/**
+ 
+ */
+@interface AFOAuth1Token : NSObject
+
+/**
+ 
+ */
+@property (readonly, nonatomic, copy) NSString *key;
+
+/**
+ 
+ */
+@property (readonly, nonatomic, copy) NSString *secret;
+
+/**
+ 
+ */
+@property (readonly, nonatomic, copy) NSString *verifier;
+
+/**
+ 
+ */
+@property (readonly, nonatomic, copy) NSString *session;
+
+/**
+ 
+ */
+@property (readonly, nonatomic, assign, getter = canBeRenewed) BOOL renewable;
+
+/**
+ 
+ */
+@property (readonly, nonatomic, assign, getter = isExpired) BOOL expired;
+
+/**
+ 
+ */
+- (id)initWithQueryString:(NSString *)queryString;
+
+@end
