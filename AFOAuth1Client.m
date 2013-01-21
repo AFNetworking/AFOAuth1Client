@@ -201,7 +201,7 @@ static inline NSString * AFPlaintextSignature(NSString *consumerSecret, NSString
 - (NSString *)OAuthSignatureForMethod:(NSString *)method
                                  path:(NSString *)path
                            parameters:(NSDictionary *)parameters
-                         requestToken:(AFOAuth1Token *)requestToken;
+                         token:(AFOAuth1Token *)requestToken;
 - (NSString *)authorizationHeaderForParameters:(NSDictionary *)parameters;
 @end
 
@@ -250,18 +250,18 @@ static inline NSString * AFPlaintextSignature(NSString *consumerSecret, NSString
 - (NSString *)OAuthSignatureForMethod:(NSString *)method
                                  path:(NSString *)path
                            parameters:(NSDictionary *)parameters
-                         requestToken:(AFOAuth1Token *)requestToken
+                         token:(AFOAuth1Token *)token
 {
-    NSMutableURLRequest *request = [super requestWithMethod:@"HEAD" path:path parameters:parameters];
+    NSMutableURLRequest *request = [super requestWithMethod:@"GET" path:path parameters:parameters];
     [request setHTTPMethod:method];
 
-    NSString *requestTokenSecret = requestToken ? requestToken.secret : nil;
+    NSString *tokenSecret = token ? token.secret : nil;
 
     switch (self.signatureMethod) {
         case AFHMACSHA1SignatureMethod:
-            return AFHMACSHA1Signature(request, self.secret, requestTokenSecret, self.stringEncoding);
+            return AFHMACSHA1Signature(request, self.secret, tokenSecret, self.stringEncoding);
         case AFPlaintextSignatureMethod:
-            return AFPlaintextSignature(self.secret, requestTokenSecret, self.stringEncoding);
+            return AFPlaintextSignature(self.secret, tokenSecret, self.stringEncoding);
         default:
             return nil;
     }
@@ -393,7 +393,7 @@ static inline NSString * AFPlaintextSignature(NSString *consumerSecret, NSString
         [mutableParameters setValue:self.accessToken.key forKey:@"oauth_token"];
     }
 
-    [mutableParameters setValue:[self OAuthSignatureForMethod:method path:path parameters:parameters requestToken:nil] forKey:@"oauth_signature"];
+    [mutableParameters setValue:[self OAuthSignatureForMethod:method path:path parameters:mutableParameters token:self.accessToken] forKey:@"oauth_signature"];
 
     NSMutableURLRequest *request = [super requestWithMethod:method path:path parameters:parameters];
     [request setValue:[self authorizationHeaderForParameters:mutableParameters] forHTTPHeaderField:@"Authorization"];
