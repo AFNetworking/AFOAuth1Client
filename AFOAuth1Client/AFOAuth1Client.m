@@ -153,25 +153,28 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
 @dynamic expired;
 
 - (id)initWithQueryString:(NSString *)queryString {
+    NSDictionary *attributes = AFParametersFromQueryString(queryString);
+    return [self initWithAttributes:attributes];
+}
+
+- (id)initWithAttributes:(NSDictionary *)attributes {
     self = [super init];
     if (!self) {
         return nil;
     }
-
-    NSDictionary *attributes = AFParametersFromQueryString(queryString);
-
+    
     self.key = [attributes objectForKey:@"oauth_token"];
     self.secret = [attributes objectForKey:@"oauth_token_secret"];
     self.session = [attributes objectForKey:@"oauth_session_handle"];
-
+    
     if (attributes[@"oauth_token_duration"]) {
         self.expiration = [NSDate dateWithTimeIntervalSinceNow:[[attributes objectForKey:@"oauth_token_duration"] doubleValue]];
     }
-
+    
     if (attributes[@"oauth_token_renewable"]) {
         self.renewable = AFQueryStringValueIsTrue([attributes objectForKey:@"oauth_token_renewable"]);
     }
-
+    
     return self;
 }
 
