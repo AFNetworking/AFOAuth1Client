@@ -376,19 +376,19 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
         expiration = [NSDate dateWithTimeIntervalSinceNow:[[attributes objectForKey:@"oauth_token_duration"] doubleValue]];
     }
 
-    BOOL isRenewable = NO;
+    BOOL canBeRenewed = NO;
     if (attributes[@"oauth_token_renewable"]) {
-        isRenewable = AFQueryStringValueIsTrue([attributes objectForKey:@"oauth_token_renewable"]);
+        canBeRenewed = AFQueryStringValueIsTrue([attributes objectForKey:@"oauth_token_renewable"]);
     }
 
-    return [self initWithKey:[attributes objectForKey:@"oauth_token"] secret:[attributes objectForKey:@"oauth_token_secret"] session:[attributes objectForKey:@"oauth_session_handle"] expiration:expiration renewable:isRenewable];
+    return [self initWithKey:[attributes objectForKey:@"oauth_token"] secret:[attributes objectForKey:@"oauth_token_secret"] session:[attributes objectForKey:@"oauth_session_handle"] expiration:expiration renewable:canBeRenewed];
 }
 
 - (id)initWithKey:(NSString *)key
            secret:(NSString *)secret
           session:(NSString *)session
        expiration:(NSDate *)expiration
-        renewable:(BOOL)isRenewable
+        renewable:(BOOL)canBeRenewed
 {
     NSParameterAssert(key);
     NSParameterAssert(secret);
@@ -402,7 +402,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
     self.secret = secret;
     self.session = session;
     self.expiration = expiration;
-    self.renewable = isRenewable;
+    self.renewable = canBeRenewed;
     
     return self;
 }

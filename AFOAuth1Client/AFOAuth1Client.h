@@ -168,6 +168,6 @@ extern NSString * const kAFApplicationLaunchOptionsURLKey;
            secret:(NSString *)secret
           session:(NSString *)session
        expiration:(NSDate *)expiration
-        renewable:(BOOL)isRenewable;
+        renewable:(BOOL)canBeRenewed;
 
 @end
