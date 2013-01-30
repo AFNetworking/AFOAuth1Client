@@ -329,11 +329,13 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
 {
     NSMutableDictionary *mutableParameters = parameters ? [parameters mutableCopy] : [NSMutableDictionary dictionary];
 
-    if (self.accessToken) {
+    if (self.key && self.secret) {
         [mutableParameters addEntriesFromDictionary:[self OAuthParameters]];
-        [mutableParameters setValue:self.accessToken.key forKey:@"oauth_token"];
+        if (self.accessToken) {
+            [mutableParameters setValue:self.accessToken.key forKey:@"oauth_token"];
+        }
     }
-
+ 
     [mutableParameters setValue:[self OAuthSignatureForMethod:method path:path parameters:mutableParameters token:self.accessToken] forKey:@"oauth_signature"];
 
     NSMutableURLRequest *request = [super requestWithMethod:method path:path parameters:parameters];
