@@ -169,6 +169,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
 @synthesize realm = _realm;
 @synthesize oauthAccessMethod = _oauthAccessMethod;
 
+#if __IPHONE_OS_VERSION_MIN_REQUIRED
 + (void)initialize
 {
     if (self != [AFOAuth1Client class]) {
@@ -219,6 +220,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
         });
     }
 }
+#endif
 
 - (id)initWithBaseURL:(NSURL *)url
                   key:(NSString *)clientID
