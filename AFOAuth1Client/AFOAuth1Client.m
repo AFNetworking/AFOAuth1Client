@@ -305,7 +305,9 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
     [parameters setValue:requestToken.key forKey:@"oauth_token"];
     [parameters setValue:requestToken.verifier forKey:@"oauth_verifier"];
 
+    self.accessToken = requestToken;
     NSMutableURLRequest *request = [self requestWithMethod:accessMethod path:path parameters:parameters];
+    self.accessToken = nil;
 
     AFHTTPRequestOperation *operation = [self HTTPRequestOperationWithRequest:request success:^(AFHTTPRequestOperation *operation, id responseObject) {
         if (success) {
@@ -336,7 +338,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
 
     [mutableParameters setValue:[self OAuthSignatureForMethod:method path:path parameters:mutableParameters token:self.accessToken] forKey:@"oauth_signature"];
 
-    NSMutableURLRequest *request = [super requestWithMethod:method path:path parameters:parameters];
+    NSMutableURLRequest *request = [super requestWithMethod:method path:path parameters:mutableParameters];
     [request setValue:[self authorizationHeaderForParameters:mutableParameters] forHTTPHeaderField:@"Authorization"];
     [request setHTTPShouldHandleCookies:NO];
 
