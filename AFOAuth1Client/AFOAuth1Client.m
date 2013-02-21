@@ -327,19 +327,33 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
                                       path:(NSString *)path
                                 parameters:(NSDictionary *)parameters
 {
+    NSMutableDictionary *authParameters = [NSMutableDictionary dictionary];
     NSMutableDictionary *mutableParameters = parameters ? [parameters mutableCopy] : [NSMutableDictionary dictionary];
-
-    if (self.accessToken) {
-        [mutableParameters addEntriesFromDictionary:[self OAuthParameters]];
-        [mutableParameters setValue:self.accessToken.key forKey:@"oauth_token"];
+    
+    // for two legged auth just having a key and secret is enough
+    if (self.key && self.secret) {
+        [authParameters addEntriesFromDictionary:[self OAuthParameters]];
+        if (self.accessToken) {
+            [authParameters setValue:self.accessToken.key forKey:@"oauth_token"];
+        }
     }
-
-    [mutableParameters setValue:[self OAuthSignatureForMethod:method path:path parameters:mutableParameters token:self.accessToken] forKey:@"oauth_signature"];
-
+    
+    // allow oauth parameters to override and extend authparameters in case this is one of the
+    // three legged auth step
+    [mutableParameters enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
+        if ([key isKindOfClass:[NSString class]] && [key hasPrefix:@"oauth_"]) {
+            [authParameters setValue:obj forKey:key];
+        }
+    }];
+    
+    // re-add all to mutable params for signing
+    [mutableParameters addEntriesFromDictionary:authParameters];
+    [authParameters setValue:[self OAuthSignatureForMethod:method path:path parameters:mutableParameters token:self.accessToken] forKey:@"oauth_signature"];
+    
     NSMutableURLRequest *request = [super requestWithMethod:method path:path parameters:parameters];
-    [request setValue:[self authorizationHeaderForParameters:mutableParameters] forHTTPHeaderField:@"Authorization"];
+    [request setValue:[self authorizationHeaderForParameters:authParameters] forHTTPHeaderField:@"Authorization"];
     [request setHTTPShouldHandleCookies:NO];
-
+    
     return request;
 }
 
