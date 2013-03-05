@@ -24,14 +24,30 @@
 #import "AFHTTPRequestOperation.h"
 
 #import <CommonCrypto/CommonHMAC.h>
+#import <objc/runtime.h>
+#import <objc/message.h>
 
 static NSString * const kAFOAuth1Version = @"1.0";
+
+#if (TARGET_OS_MAC && !(TARGET_OS_EMBEDDED || TARGET_OS_IPHONE))
 NSString * const kAFApplicationLaunchedWithURLNotification = @"kAFApplicationLaunchedWithURLNotification";
-#if __IPHONE_OS_VERSION_MIN_REQUIRED
-NSString * const kAFApplicationLaunchOptionsURLKey = @"UIApplicationLaunchOptionsURLKey";
-#else
 NSString * const kAFApplicationLaunchOptionsURLKey = @"NSApplicationLaunchOptionsURLKey";
 #endif
+
+char *const AFOAuth1ClientCallbackURLKey;
+char *const AFOAuth1ClientContinueAuthorizationBlockKey;
+char *const AFOAuth1ClientApplicationDelegateKey;
+
+static inline void class_swizzleSelector(Class class, SEL originalSelector, SEL newSelector)
+{
+    Method origMethod = class_getInstanceMethod(class, originalSelector);
+    Method newMethod = class_getInstanceMethod(class, newSelector);
+    if(class_addMethod(class, originalSelector, method_getImplementation(newMethod), method_getTypeEncoding(newMethod))) {
+        class_replaceMethod(class, newSelector, method_getImplementation(origMethod), method_getTypeEncoding(origMethod));
+    } else {
+        method_exchangeImplementations(origMethod, newMethod);
+    }
+}
 
 static NSString * AFEncodeBase64WithData(NSData *data) {
     NSUInteger length = [data length];
@@ -153,6 +169,59 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
 @synthesize realm = _realm;
 @synthesize oauthAccessMethod = _oauthAccessMethod;
 
+#if __IPHONE_OS_VERSION_MIN_REQUIRED
++ (void)initialize
+{
+    if (self != [AFOAuth1Client class]) {
+        return;
+    }
+    
+    Class delegateClass = [[UIApplication sharedApplication].delegate class];
+    SEL openURLAction = @selector(application:openURL:sourceApplication:annotation:);
+    SEL hookedOpenURLAction = @selector(__AFOAuth1ClientApplication:openURL:sourceApplication:annotation:);
+    char *types = protocol_getMethodDescription(@protocol(UIApplicationDelegate), openURLAction, NO, YES).types;
+    
+    BOOL isOpenURLAlreadyImplemented = class_respondsToSelector(delegateClass, openURLAction);
+    
+    BOOL(^blockImplementation)(id blockSelf, UIApplication *application, NSURL *URL, NSString *sourceApplication, id annotation) = ^BOOL(id blockSelf, UIApplication *application, NSURL *URL, NSString *sourceApplication, id annotation) {
+        NSURL *callbackURL = objc_getAssociatedObject(blockSelf, &AFOAuth1ClientCallbackURLKey);
+        dispatch_block_t continueAuthorizationBlock = objc_getAssociatedObject(blockSelf, &AFOAuth1ClientContinueAuthorizationBlockKey);
+        
+        if (callbackURL && [URL.absoluteString hasPrefix:callbackURL.absoluteString] && continueAuthorizationBlock) {
+            continueAuthorizationBlock();
+            return YES;
+        }
+        
+        if (isOpenURLAlreadyImplemented) {
+            return (BOOL)objc_msgSend(blockSelf, hookedOpenURLAction, application, URL, sourceApplication, annotation);
+        }
+        
+        return NO;
+    };
+    
+    IMP implementation = imp_implementationWithBlock(blockImplementation);
+    
+    if (isOpenURLAlreadyImplemented) {
+        class_addMethod(delegateClass, hookedOpenURLAction, implementation, types);
+        class_swizzleSelector(delegateClass, openURLAction, hookedOpenURLAction);
+    } else {
+        class_addMethod(delegateClass, openURLAction, implementation, types);
+        
+        // UIApplication caches if delegate responds to openURLAction, since we implemented it here at runtime, we have to invalidate the cache by resetting the delegate
+        dispatch_async(dispatch_get_main_queue(), ^{
+            id previousDelegate = [UIApplication sharedApplication].delegate;
+            
+            [UIApplication sharedApplication].delegate = nil;
+            [UIApplication sharedApplication].delegate = previousDelegate;
+            
+            // UIKit retains the previous delegate somewhere. Thats not the case anymore when delegate is changed. Therefore, we need to retain the delegate manually.
+            objc_setAssociatedObject([UIApplication sharedApplication], &AFOAuth1ClientApplicationDelegateKey,
+                                     previousDelegate, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        });
+    }
+}
+#endif
+
 - (id)initWithBaseURL:(NSURL *)url
                   key:(NSString *)clientID
                secret:(NSString *)secret
@@ -236,15 +305,19 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
                                         failure:(void (^)(NSError *error))failure
 {
     [self acquireOAuthRequestTokenWithPath:requestTokenPath callback:callbackURL accessMethod:(NSString *)accessMethod success:^(AFOAuth1Token *requestToken) {
+        NSMutableDictionary *parameters = [NSMutableDictionary dictionary];
+        [parameters setValue:requestToken.key forKey:@"oauth_token"];
+        
+#if (TARGET_OS_MAC && !(TARGET_OS_EMBEDDED || TARGET_OS_IPHONE))
         __block AFOAuth1Token *currentRequestToken = requestToken;
         [[NSNotificationCenter defaultCenter] addObserverForName:kAFApplicationLaunchedWithURLNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *notification) {
             NSURL *url = [[notification userInfo] valueForKey:kAFApplicationLaunchOptionsURLKey];
-
+            
             currentRequestToken.verifier = [AFParametersFromQueryString([url query]) valueForKey:@"oauth_verifier"];
-
+            
             [self acquireOAuthAccessTokenWithPath:accessTokenPath requestToken:currentRequestToken accessMethod:accessMethod success:^(AFOAuth1Token * accessToken) {
                 self.accessToken = accessToken;
-
+                
                 if (success) {
                     success(accessToken);
                 }
@@ -254,13 +327,39 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
                 }
             }];
         }];
-
-        NSMutableDictionary *parameters = [NSMutableDictionary dictionary];
-        [parameters setValue:requestToken.key forKey:@"oauth_token"];
-#if __IPHONE_OS_VERSION_MIN_REQUIRED
-        [[UIApplication sharedApplication] openURL:[[self requestWithMethod:@"GET" path:userAuthorizationPath parameters:parameters] URL]];
-#else
+        
         [[NSWorkspace sharedWorkspace] openURL:[[self requestWithMethod:@"GET" path:userAuthorizationPath parameters:parameters] URL]];
+#else
+        id applicationDelegate = [UIApplication sharedApplication].delegate;
+        
+        objc_setAssociatedObject(applicationDelegate, &AFOAuth1ClientCallbackURLKey,
+                                 callbackURL, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        
+        void(^continueAuthorizationBlock)(void) = ^{
+            objc_setAssociatedObject(applicationDelegate, &AFOAuth1ClientCallbackURLKey,
+                                     nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+            objc_setAssociatedObject(applicationDelegate, &AFOAuth1ClientContinueAuthorizationBlockKey,
+                                     nil, OBJC_ASSOCIATION_COPY_NONATOMIC);
+            
+            requestToken.verifier = [AFParametersFromQueryString(callbackURL.query) valueForKey:@"oauth_verifier"];
+            
+            [self acquireOAuthAccessTokenWithPath:accessTokenPath requestToken:requestToken accessMethod:accessMethod success:^(AFOAuth1Token *accessToken) {
+                self.accessToken = accessToken;
+                
+                if (success) {
+                    success(accessToken);
+                }
+            } failure:^(NSError *error) {
+                if (failure) {
+                    failure(error);
+                }
+            }];
+        };
+        
+        objc_setAssociatedObject(applicationDelegate, &AFOAuth1ClientContinueAuthorizationBlockKey,
+                                 continueAuthorizationBlock, OBJC_ASSOCIATION_COPY_NONATOMIC);
+        
+        [[UIApplication sharedApplication] openURL:[[self requestWithMethod:@"GET" path:userAuthorizationPath parameters:parameters] URL]];
 #endif
     } failure:^(NSError *error) {
         if (failure) {

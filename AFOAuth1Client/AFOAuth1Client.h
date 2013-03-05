@@ -111,7 +111,9 @@ typedef enum {
 /**
 
  */
+#if (TARGET_OS_MAC && !(TARGET_OS_EMBEDDED || TARGET_OS_IPHONE))
 extern NSString * const kAFApplicationLaunchedWithURLNotification;
+#endif
 
 /**
 
