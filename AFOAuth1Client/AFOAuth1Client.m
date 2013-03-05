@@ -188,7 +188,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
     if (self.realm) {
         [parameters setValue:self.realm forKey:@"realm"];
     }
-
+    
     return parameters;
 }
 
@@ -234,7 +234,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
 
     [mutableParameters addEntriesFromDictionary:mutableAuthorizationParameters];
     [mutableAuthorizationParameters setValue:[self OAuthSignatureForMethod:method path:path parameters:mutableParameters token:self.accessToken] forKey:@"oauth_signature"];
-
+    
     NSArray *sortedComponents = [[AFQueryStringFromParametersWithEncoding(mutableAuthorizationParameters, self.stringEncoding) componentsSeparatedByString:@"&"] sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)];
     NSMutableArray *mutableComponents = [NSMutableArray array];
     for (NSString *component in sortedComponents) {
@@ -255,7 +255,19 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
                                         success:(void (^)(AFOAuth1Token *accessToken))success
                                         failure:(void (^)(NSError *error))failure
 {
-    [self acquireOAuthRequestTokenWithPath:requestTokenPath callback:callbackURL accessMethod:(NSString *)accessMethod success:^(AFOAuth1Token *requestToken) {
+    [self authorizeUsingOAuthWithRequestTokenPath:requestTokenPath userAuthorizationPath:userAuthorizationPath callbackURL:callbackURL accessTokenPath:accessTokenPath accessMethod:accessMethod scope:nil success:success failure:failure];
+}
+
+- (void)authorizeUsingOAuthWithRequestTokenPath:(NSString *)requestTokenPath
+                          userAuthorizationPath:(NSString *)userAuthorizationPath
+                                    callbackURL:(NSURL *)callbackURL
+                                accessTokenPath:(NSString *)accessTokenPath
+                                   accessMethod:(NSString *)accessMethod
+                                          scope:(NSString *)scope
+                                        success:(void (^)(AFOAuth1Token *accessToken))success
+                                        failure:(void (^)(NSError *error))failure
+{
+    [self acquireOAuthRequestTokenWithPath:requestTokenPath callback:callbackURL accessMethod:(NSString *)accessMethod scope:scope success:^(AFOAuth1Token *requestToken) {
         __block AFOAuth1Token *currentRequestToken = requestToken;
         [[NSNotificationCenter defaultCenter] addObserverForName:kAFApplicationLaunchedWithURLNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *notification) {
             NSURL *url = [[notification userInfo] valueForKey:kAFApplicationLaunchOptionsURLKey];
@@ -295,8 +307,21 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
                                  success:(void (^)(AFOAuth1Token *requestToken))success
                                  failure:(void (^)(NSError *error))failure
 {
+    [self acquireOAuthRequestTokenWithPath:path callback:callbackURL accessMethod:accessMethod scope:nil success:success failure:failure];
+}
+
+- (void)acquireOAuthRequestTokenWithPath:(NSString *)path
+                                callback:(NSURL *)callbackURL
+                            accessMethod:(NSString *)accessMethod
+                                   scope:(NSString *)scope
+                                 success:(void (^)(AFOAuth1Token *requestToken))success
+                                 failure:(void (^)(NSError *error))failure
+{
     NSMutableDictionary *parameters = [[self OAuthParameters] mutableCopy];
     [parameters setValue:[callbackURL absoluteString] forKey:@"oauth_callback"];
+    if (scope && !self.accessToken) {
+        [parameters setValue:scope forKey:@"scope"];
+    }
 
     NSMutableURLRequest *request = [self requestWithMethod:accessMethod path:path parameters:parameters];
     [request setHTTPBody:nil];
