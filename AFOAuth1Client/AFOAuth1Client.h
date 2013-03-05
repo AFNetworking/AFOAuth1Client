@@ -22,6 +22,10 @@
 
 #import "AFHTTPClient.h"
 
+#ifndef _SECURITY_SECITEM_H_
+#warning Security framework not found in project, or not included in precompiled header. Keychain persistence functionality will not be available.
+#endif
+
 typedef enum {
     AFHMACSHA1SignatureMethod = 1,
 } AFOAuthSignatureMethod;
@@ -169,5 +173,23 @@ extern NSString * const kAFApplicationLaunchOptionsURLKey;
           session:(NSString *)session
        expiration:(NSDate *)expiration
         renewable:(BOOL)canBeRenewed;
+
+#ifdef _SECURITY_SECITEM_H_
+/**
+ 
+ */
++ (BOOL)storeToken:(AFOAuth1Token *)token
+    withIdentifier:(NSString *)identifier;
+
+/**
+ 
+ */
++ (BOOL)deleteTokenWithIdentifier:(NSString *)identifier;
+
+/**
+ 
+ */
++ (AFOAuth1Token *)retrieveTokenWithIdentifier:(NSString *)identifier;
+#endif
 
 @end
