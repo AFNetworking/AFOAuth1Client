@@ -330,18 +330,28 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
                                 parameters:(NSDictionary *)parameters
 {
     NSMutableDictionary *mutableParameters = parameters ? [parameters mutableCopy] : [NSMutableDictionary dictionary];
+    NSMutableDictionary *mutableAuthorizationParameters = [NSMutableDictionary dictionary];
 
-    if (self.accessToken) {
-        [mutableParameters addEntriesFromDictionary:[self OAuthParameters]];
-        [mutableParameters setValue:self.accessToken.key forKey:@"oauth_token"];
+    if (self.key && self.secret) {
+        [mutableAuthorizationParameters addEntriesFromDictionary:[self OAuthParameters]];
+        if (self.accessToken) {
+            [mutableAuthorizationParameters setValue:self.accessToken.key forKey:@"oauth_token"];
+        }
     }
-
-    [mutableParameters setValue:[self OAuthSignatureForMethod:method path:path parameters:mutableParameters token:self.accessToken] forKey:@"oauth_signature"];
-
-    NSMutableURLRequest *request = [super requestWithMethod:method path:path parameters:mutableParameters];
-    [request setValue:[self authorizationHeaderForParameters:mutableParameters] forHTTPHeaderField:@"Authorization"];
+    
+    [mutableParameters enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
+        if ([key isKindOfClass:[NSString class]] && [key hasPrefix:@"oauth_"]) {
+            [mutableAuthorizationParameters setValue:obj forKey:key];
+        }
+    }];
+    
+    [mutableParameters addEntriesFromDictionary:mutableAuthorizationParameters];
+    [mutableAuthorizationParameters setValue:[self OAuthSignatureForMethod:method path:path parameters:mutableParameters token:self.accessToken] forKey:@"oauth_signature"];
+    
+    NSMutableURLRequest *request = [super requestWithMethod:method path:path parameters:parameters];
+    [request setValue:[self authorizationHeaderForParameters:mutableAuthorizationParameters] forHTTPHeaderField:@"Authorization"];
     [request setHTTPShouldHandleCookies:NO];
-
+    
     return request;
 }
 
