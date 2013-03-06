@@ -257,23 +257,30 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
 {
     [self acquireOAuthRequestTokenWithPath:requestTokenPath callback:callbackURL accessMethod:(NSString *)accessMethod success:^(AFOAuth1Token *requestToken) {
         __block AFOAuth1Token *currentRequestToken = requestToken;
-        [[NSNotificationCenter defaultCenter] addObserverForName:kAFApplicationLaunchedWithURLNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *notification) {
-            NSURL *url = [[notification userInfo] valueForKey:kAFApplicationLaunchOptionsURLKey];
-
-            currentRequestToken.verifier = [AFParametersFromQueryString([url query]) valueForKey:@"oauth_verifier"];
-
-            [self acquireOAuthAccessTokenWithPath:accessTokenPath requestToken:currentRequestToken accessMethod:accessMethod success:^(AFOAuth1Token * accessToken) {
-                self.accessToken = accessToken;
-
-                if (success) {
-                    success(accessToken);
-                }
-            } failure:^(NSError *error) {
-                if (failure) {
-                    failure(error);
-                }
-            }];
-        }];
+      
+      __block id applicationLaunchNotificationObserver = [[NSNotificationCenter defaultCenter]
+                                                          addObserverForName:kAFApplicationLaunchedWithURLNotification
+                                                          object:nil
+                                                          queue:[NSOperationQueue mainQueue]
+                                                          usingBlock:^(NSNotification *notification) {
+                                                            
+                                                            [[NSNotificationCenter defaultCenter] removeObserver:applicationLaunchNotificationObserver];
+                                                            NSURL *url = [[notification userInfo] valueForKey:kAFApplicationLaunchOptionsURLKey];
+                                                            
+                                                            currentRequestToken.verifier = [AFParametersFromQueryString([url query]) valueForKey:@"oauth_verifier"];
+                                                            
+                                                            [self acquireOAuthAccessTokenWithPath:accessTokenPath requestToken:currentRequestToken accessMethod:accessMethod success:^(AFOAuth1Token * accessToken) {
+                                                              self.accessToken = accessToken;
+                                                              
+                                                              if (success) {
+                                                                success(accessToken);
+                                                              }
+                                                            } failure:^(NSError *error) {
+                                                              if (failure) {
+                                                                failure(error);
+                                                              }
+                                                            }];
+                                                          }];
 
         NSMutableDictionary *parameters = [NSMutableDictionary dictionary];
         [parameters setValue:requestToken.key forKey:@"oauth_token"];
