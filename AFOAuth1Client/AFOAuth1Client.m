@@ -362,9 +362,12 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
                               constructingBodyWithBlock:(void (^)(id <AFMultipartFormData> formData))block
 {
     NSMutableURLRequest *request = [super multipartFormRequestWithMethod:method path:path parameters:parameters constructingBodyWithBlock:block];
-    [request setValue:[self authorizationHeaderForMethod:method path:path parameters:parameters] forHTTPHeaderField:@"Authorization"];
-    [request setHTTPShouldHandleCookies:NO];
-    
+
+    if (!self.isDisabledMultipartDataInOauth) {
+        [request setValue:[self authorizationHeaderForMethod:method path:path parameters:parameters] forHTTPHeaderField:@"Authorization"];
+        [request setHTTPShouldHandleCookies:NO];
+    }
+
     return request;
 }
 
