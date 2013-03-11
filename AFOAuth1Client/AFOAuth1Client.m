@@ -285,9 +285,6 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
                                                       queue:[NSOperationQueue mainQueue]
                                                       usingBlock:^(NSNotification *notification) {
                                                           
-                                                          // Unregister from further notifications.
-                                                          [self unregisterFromApplicationLaunchNotifications];
-                                                          
                                                           NSURL *url = [[notification userInfo] valueForKey:kAFApplicationLaunchOptionsURLKey];
                                                           
                                                           currentRequestToken.verifier = [AFParametersFromQueryString([url query]) valueForKey:@"oauth_verifier"];
@@ -303,6 +300,10 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
                                                                   failure(error);
                                                               }
                                                           }];
+                                                        
+                                                          // Unregister from further notifications.
+                                                          [self unregisterFromApplicationLaunchNotifications];
+                                                        
                                                       }];
         
         NSMutableDictionary *parameters = [NSMutableDictionary dictionary];
