@@ -137,6 +137,9 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
 @interface AFOAuth1Client ()
 @property (readwrite, nonatomic, copy) NSString *key;
 @property (readwrite, nonatomic, copy) NSString *secret;
+@property (readwrite, nonatomic, strong) id applicationLaunchNotificationObserver;
+
+-(void)removeApplicationLaunchNotificationObserver;
 
 - (NSDictionary *)OAuthParameters;
 - (NSString *)OAuthSignatureForMethod:(NSString *)method
@@ -175,6 +178,19 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
     self.oauthAccessMethod = @"GET";
 
     return self;
+}
+
+- (void)dealloc
+{
+  [self removeApplicationLaunchNotificationObserver];
+}
+
+-(void)removeApplicationLaunchNotificationObserver
+{
+  if (self.applicationLaunchNotificationObserver) {
+    [[NSNotificationCenter defaultCenter] removeObserver:self.applicationLaunchNotificationObserver];
+    self.applicationLaunchNotificationObserver = nil;
+  }
 }
 
 - (NSDictionary *)OAuthParameters {
@@ -257,24 +273,40 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
 {
     [self acquireOAuthRequestTokenWithPath:requestTokenPath callback:callbackURL accessMethod:(NSString *)accessMethod success:^(AFOAuth1Token *requestToken) {
         __block AFOAuth1Token *currentRequestToken = requestToken;
-        [[NSNotificationCenter defaultCenter] addObserverForName:kAFApplicationLaunchedWithURLNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *notification) {
-            NSURL *url = [[notification userInfo] valueForKey:kAFApplicationLaunchOptionsURLKey];
-
-            currentRequestToken.verifier = [AFParametersFromQueryString([url query]) valueForKey:@"oauth_verifier"];
-
-            [self acquireOAuthAccessTokenWithPath:accessTokenPath requestToken:currentRequestToken accessMethod:accessMethod success:^(AFOAuth1Token * accessToken) {
-                self.accessToken = accessToken;
-
-                if (success) {
-                    success(accessToken);
-                }
-            } failure:^(NSError *error) {
-                if (failure) {
-                    failure(error);
-                }
-            }];
-        }];
-
+        
+        // Make sure not to register multiple notification observers.
+        // Handles the case where sign-in was cancelled by the user while in the external browser.
+        if (self.applicationLaunchNotificationObserver) {
+            [self removeApplicationLaunchNotificationObserver];
+        }
+        
+        self.applicationLaunchNotificationObserver = [[NSNotificationCenter defaultCenter]
+                                                      addObserverForName:kAFApplicationLaunchedWithURLNotification
+                                                      object:nil
+                                                      queue:[NSOperationQueue mainQueue]
+                                                      usingBlock:^(NSNotification *notification) {
+                                                          
+                                                          NSURL *url = [[notification userInfo] valueForKey:kAFApplicationLaunchOptionsURLKey];
+                                                          
+                                                          currentRequestToken.verifier = [AFParametersFromQueryString([url query]) valueForKey:@"oauth_verifier"];
+                                                          
+                                                          [self acquireOAuthAccessTokenWithPath:accessTokenPath requestToken:currentRequestToken accessMethod:accessMethod success:^(AFOAuth1Token * accessToken) {
+                                                              self.accessToken = accessToken;
+                                                              
+                                                              if (success) {
+                                                                  success(accessToken);
+                                                              }
+                                                          } failure:^(NSError *error) {
+                                                              if (failure) {
+                                                                  failure(error);
+                                                              }
+                                                          }];
+                                                        
+                                                          // Unregister from further notifications.
+                                                          [self removeApplicationLaunchNotificationObserver];
+                                                        
+                                                      }];
+        
         NSMutableDictionary *parameters = [NSMutableDictionary dictionary];
         [parameters setValue:requestToken.key forKey:@"oauth_token"];
 #if __IPHONE_OS_VERSION_MIN_REQUIRED
