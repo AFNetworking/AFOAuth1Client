@@ -139,7 +139,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
 @property (readwrite, nonatomic, copy) NSString *secret;
 @property (readwrite, nonatomic, strong) id applicationLaunchNotificationObserver;
 
--(void)unregisterFromApplicationLaunchNotifications;
+-(void)removeApplicationLaunchNotificationObserver;
 
 - (NSDictionary *)OAuthParameters;
 - (NSString *)OAuthSignatureForMethod:(NSString *)method
@@ -182,10 +182,11 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
 
 - (void)dealloc
 {
-  [self unregisterFromApplicationLaunchNotifications];
+  [self removeApplicationLaunchNotificationObserver];
 }
 
--(void)unregisterFromApplicationLaunchNotifications {
+-(void)removeApplicationLaunchNotificationObserver
+{
   if (self.applicationLaunchNotificationObserver) {
     [[NSNotificationCenter defaultCenter] removeObserver:self.applicationLaunchNotificationObserver];
     self.applicationLaunchNotificationObserver = nil;
@@ -276,7 +277,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
         // Make sure not to register multiple notification observers.
         // Handles the case where sign-in was cancelled by the user while in the external browser.
         if (self.applicationLaunchNotificationObserver) {
-            [self unregisterFromApplicationLaunchNotifications];
+            [self removeApplicationLaunchNotificationObserver];
         }
         
         self.applicationLaunchNotificationObserver = [[NSNotificationCenter defaultCenter]
@@ -302,7 +303,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
                                                           }];
                                                         
                                                           // Unregister from further notifications.
-                                                          [self unregisterFromApplicationLaunchNotifications];
+                                                          [self removeApplicationLaunchNotificationObserver];
                                                         
                                                       }];
         
