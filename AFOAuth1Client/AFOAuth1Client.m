@@ -343,6 +343,39 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
     [self enqueueHTTPRequestOperation:operation];
 }
 
+
+#pragma mark - XAuth
+
+- (void)acquireXAuthAccessTokenWithPath:(NSString *)path
+                           accessMethod:(NSString *)accessMethod
+                               username:(NSString *)username
+                               password:(NSString *)password
+                                success:(void (^)(AFOAuth1Token *))success
+                                failure:(void (^)(NSError *))failure
+{
+    NSMutableDictionary *parameters = [[self OAuthParameters] mutableCopy];
+
+    [parameters setObject:username forKey:@"x_auth_username"];
+    [parameters setObject:password forKey:@"x_auth_password"];
+    [parameters setObject:@"client_auth" forKey:@"x_auth_mode"];
+
+    NSMutableURLRequest *request = [self requestWithMethod:accessMethod path:path parameters:parameters];
+
+    AFHTTPRequestOperation *operation = [self HTTPRequestOperationWithRequest:request success:^(AFHTTPRequestOperation *operation, id responseObject) {
+        if (success) {
+            AFOAuth1Token *accessToken = [[AFOAuth1Token alloc] initWithQueryString:operation.responseString];
+            success(accessToken);
+        }
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+        if (failure) {
+            failure(error);
+        }
+    }];
+
+    [self enqueueHTTPRequestOperation:operation];
+}
+
+
 #pragma mark - AFHTTPClient
 
 - (NSMutableURLRequest *)requestWithMethod:(NSString *)method
