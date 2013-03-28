@@ -347,7 +347,6 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
 #pragma mark - XAuth
 
 - (void)acquireXAuthAccessTokenWithPath:(NSString *)path
-                           accessMethod:(NSString *)accessMethod
                                username:(NSString *)username
                                password:(NSString *)password
                                 success:(void (^)(AFOAuth1Token *))success
@@ -359,7 +358,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
     [parameters setObject:password forKey:@"x_auth_password"];
     [parameters setObject:@"client_auth" forKey:@"x_auth_mode"];
 
-    NSMutableURLRequest *request = [self requestWithMethod:accessMethod path:path parameters:parameters];
+    NSMutableURLRequest *request = [self requestWithMethod:@"POST" path:path parameters:parameters];
 
     AFHTTPRequestOperation *operation = [self HTTPRequestOperationWithRequest:request success:^(AFHTTPRequestOperation *operation, id responseObject) {
         if (success) {
