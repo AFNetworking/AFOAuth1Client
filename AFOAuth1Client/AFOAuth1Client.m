@@ -352,8 +352,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
                                 success:(void (^)(AFOAuth1Token *))success
                                 failure:(void (^)(NSError *))failure
 {
-    NSMutableDictionary *parameters = [[self OAuthParameters] mutableCopy];
-
+    NSMutableDictionary *parameters = [NSMutableDictionary dictionary];
     [parameters setObject:username forKey:@"x_auth_username"];
     [parameters setObject:password forKey:@"x_auth_password"];
     [parameters setObject:@"client_auth" forKey:@"x_auth_mode"];
