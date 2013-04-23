@@ -351,7 +351,15 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
                                       path:(NSString *)path
                                 parameters:(NSDictionary *)parameters
 {
-    NSMutableURLRequest *request = [super requestWithMethod:method path:path parameters:nil];
+    NSMutableDictionary *requestParameters = [parameters mutableCopy];
+    for (NSString* parameterName in parameters) {
+        if ([parameterName hasPrefix:@"oauth_"]) {
+            [requestParameters removeObjectForKey:parameterName];
+        }
+    }
+    
+    NSMutableURLRequest *request = [super requestWithMethod:method path:path parameters:requestParameters];
+    
     [request setValue:[self authorizationHeaderForMethod:method path:path parameters:parameters] forHTTPHeaderField:@"Authorization"];
     [request setHTTPShouldHandleCookies:NO];
     
