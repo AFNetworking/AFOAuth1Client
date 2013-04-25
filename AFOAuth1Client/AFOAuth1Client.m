@@ -375,6 +375,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
 NSString * const kAFOAuth1TokenEncodingKeyKey = @"kAFOAuth1TokenEncodingKeyKey";
 NSString * const kAFOAuth1TokenEncodingKeySecret = @"kAFOAuth1TokenEncodingKeySecret";
 NSString * const kAFOAuth1TokenEncodingKeySession = @"kAFOAuth1TokenEncodingKeySession";
+NSString * const kAFOAuth1TokenEncodingKeyVerifier = @"kAFOAuth1TokenEncodingKeyVerifier";
 NSString * const kAFOAuth1TokenEncodingKeyExpiration = @"kAFOAuth1TokenEncodingKeyExpiration";
 NSString * const kAFOAuth1TokenEncodingKeyRenewable = @"kAFOAuth1TokenEncodingKeyRenewable";
 
@@ -443,6 +444,7 @@ NSString * const kAFOAuth1TokenEncodingKeyRenewable = @"kAFOAuth1TokenEncodingKe
     [coder encodeObject:self.key forKey:kAFOAuth1TokenEncodingKeyKey];
     [coder encodeObject:self.secret forKey:kAFOAuth1TokenEncodingKeySecret];
     [coder encodeObject:self.session forKey:kAFOAuth1TokenEncodingKeySession];
+    [coder encodeObject:self.verifier forKey:kAFOAuth1TokenEncodingKeyVerifier];
     [coder encodeObject:self.expiration forKey:kAFOAuth1TokenEncodingKeyExpiration];
     [coder encodeBool:self.renewable forKey:kAFOAuth1TokenEncodingKeyRenewable];
 }
@@ -457,6 +459,7 @@ NSString * const kAFOAuth1TokenEncodingKeyRenewable = @"kAFOAuth1TokenEncodingKe
     self.key = [decoder decodeObjectForKey:kAFOAuth1TokenEncodingKeyKey];
     self.secret = [decoder decodeObjectForKey:kAFOAuth1TokenEncodingKeySecret];
     self.session = [decoder decodeObjectForKey:kAFOAuth1TokenEncodingKeySession];
+    self.verifier = [decoder decodeObjectForKey:kAFOAuth1TokenEncodingKeyVerifier];
     self.expiration = [decoder decodeObjectForKey:kAFOAuth1TokenEncodingKeyExpiration];
     self.renewable = [decoder decodeBoolForKey:kAFOAuth1TokenEncodingKeyRenewable];
 
