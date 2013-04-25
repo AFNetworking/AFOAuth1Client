@@ -372,6 +372,12 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
 
 #pragma mark -
 
+NSString * const AFOAuth1TokenEncodingKeyKey = @"AFOAuth1TokenEncodingKeyKey";
+NSString * const AFOAuth1TokenEncodingKeySecret = @"AFOAuth1TokenEncodingKeySecret";
+NSString * const AFOAuth1TokenEncodingKeySession = @"AFOAuth1TokenEncodingKeySession";
+NSString * const AFOAuth1TokenEncodingKeyExpiration = @"AFOAuth1TokenEncodingKeyExpiration";
+NSString * const AFOAuth1TokenEncodingKeyRenewable = @"AFOAuth1TokenEncodingKeyRenewable";
+
 @interface AFOAuth1Token ()
 @property (readwrite, nonatomic, copy) NSString *key;
 @property (readwrite, nonatomic, copy) NSString *secret;
@@ -429,6 +435,31 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
     self.expiration = expiration;
     self.renewable = canBeRenewed;
     
+    return self;
+}
+
+- (void)encodeWithCoder:(NSCoder *)coder
+{
+    [coder encodeObject:self.key forKey:AFOAuth1TokenEncodingKeyKey];
+    [coder encodeObject:self.secret forKey:AFOAuth1TokenEncodingKeySecret];
+    [coder encodeObject:self.session forKey:AFOAuth1TokenEncodingKeySession];
+    [coder encodeObject:self.expiration forKey:AFOAuth1TokenEncodingKeyExpiration];
+    [coder encodeBool:self.renewable forKey:AFOAuth1TokenEncodingKeyRenewable];
+}
+
+- (id)initWithCoder:(NSCoder *)decoder
+{
+    self = [super init];
+    if (!self) {
+      return nil;
+    }
+
+    self.key = [decoder decodeObjectForKey:AFOAuth1TokenEncodingKeyKey];
+    self.secret = [decoder decodeObjectForKey:AFOAuth1TokenEncodingKeySecret];
+    self.session = [decoder decodeObjectForKey:AFOAuth1TokenEncodingKeySession];
+    self.expiration = [decoder decodeObjectForKey:AFOAuth1TokenEncodingKeyExpiration];
+    self.renewable = [decoder decodeBoolForKey:AFOAuth1TokenEncodingKeyRenewable];
+
     return self;
 }
 
