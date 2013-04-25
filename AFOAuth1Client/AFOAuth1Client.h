@@ -123,7 +123,7 @@ extern NSString * const kAFApplicationLaunchOptionsURLKey;
 /**
 
  */
-@interface AFOAuth1Token : NSObject
+@interface AFOAuth1Token : NSObject <NSCoding>
 
 /**
 
