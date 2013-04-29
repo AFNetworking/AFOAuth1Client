@@ -255,14 +255,14 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
                                         success:(void (^)(AFOAuth1Token *accessToken))success
                                         failure:(void (^)(NSError *error))failure
 {
-    [self acquireOAuthRequestTokenWithPath:requestTokenPath callback:callbackURL accessMethod:(NSString *)accessMethod success:^(AFOAuth1Token *requestToken) {
+    [self acquireOAuthRequestTokenWithPath:requestTokenPath callback:callbackURL accessMethod:(NSString *)accessMethod success:^(AFHTTPRequestOperation *operation, AFOAuth1Token *requestToken) {
         __block AFOAuth1Token *currentRequestToken = requestToken;
         [[NSNotificationCenter defaultCenter] addObserverForName:kAFApplicationLaunchedWithURLNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *notification) {
             NSURL *url = [[notification userInfo] valueForKey:kAFApplicationLaunchOptionsURLKey];
 
             currentRequestToken.verifier = [AFParametersFromQueryString([url query]) valueForKey:@"oauth_verifier"];
 
-            [self acquireOAuthAccessTokenWithPath:accessTokenPath requestToken:currentRequestToken accessMethod:accessMethod success:^(AFOAuth1Token * accessToken) {
+            [self acquireOAuthAccessTokenWithPath:accessTokenPath requestToken:currentRequestToken accessMethod:accessMethod success:^(AFHTTPRequestOperation *operation, AFOAuth1Token * accessToken) {
                 self.accessToken = accessToken;
 
                 if (success) {
@@ -292,7 +292,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
 - (void)acquireOAuthRequestTokenWithPath:(NSString *)path
                                 callback:(NSURL *)callbackURL
                             accessMethod:(NSString *)accessMethod
-                                 success:(void (^)(AFOAuth1Token *requestToken))success
+                                 success:(void (^)(AFHTTPRequestOperation *operation, AFOAuth1Token *requestToken))success
                                  failure:(void (^)(NSError *error))failure
 {
     NSMutableDictionary *parameters = [[self OAuthParameters] mutableCopy];
@@ -304,7 +304,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
     AFHTTPRequestOperation *operation = [self HTTPRequestOperationWithRequest:request success:^(AFHTTPRequestOperation *operation, id responseObject) {
         if (success) {
             AFOAuth1Token *accessToken = [[AFOAuth1Token alloc] initWithQueryString:operation.responseString];
-            success(accessToken);
+            success(operation, accessToken);
         }
     } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
         if (failure) {
@@ -318,7 +318,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
 - (void)acquireOAuthAccessTokenWithPath:(NSString *)path
                            requestToken:(AFOAuth1Token *)requestToken
                            accessMethod:(NSString *)accessMethod
-                                success:(void (^)(AFOAuth1Token *accessToken))success
+                                success:(void (^)(AFHTTPRequestOperation *operation, AFOAuth1Token *accessToken))success
                                 failure:(void (^)(NSError *error))failure
 {
     self.accessToken = requestToken;
@@ -332,7 +332,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
     AFHTTPRequestOperation *operation = [self HTTPRequestOperationWithRequest:request success:^(AFHTTPRequestOperation *operation, id responseObject) {
         if (success) {
             AFOAuth1Token *accessToken = [[AFOAuth1Token alloc] initWithQueryString:operation.responseString];
-            success(accessToken);
+            success(operation, accessToken);
         }
     } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
         if (failure) {

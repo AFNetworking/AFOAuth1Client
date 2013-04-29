@@ -90,7 +90,7 @@ typedef enum {
 - (void)acquireOAuthRequestTokenWithPath:(NSString *)path
                                 callback:(NSURL *)url
                             accessMethod:(NSString *)accessMethod
-                                 success:(void (^)(AFOAuth1Token *requestToken))success
+                                 success:(void (^)(AFHTTPRequestOperation *operation, AFOAuth1Token *requestToken))success
                                  failure:(void (^)(NSError *error))failure;
 
 /**
@@ -99,7 +99,7 @@ typedef enum {
 - (void)acquireOAuthAccessTokenWithPath:(NSString *)path
                            requestToken:(AFOAuth1Token *)requestToken
                            accessMethod:(NSString *)accessMethod
-                                success:(void (^)(AFOAuth1Token *accessToken))success
+                                success:(void (^)(AFHTTPRequestOperation *operation, AFOAuth1Token *accessToken))success
                                 failure:(void (^)(NSError *error))failure;
 
 @end
