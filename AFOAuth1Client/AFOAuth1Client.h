@@ -57,6 +57,8 @@ typedef enum {
  */
 @property (nonatomic, strong) NSString *oauthAccessMethod;
 
+@property (nonatomic, assign) BOOL embedInGetParams;
+
 ///---------------------
 /// @name Initialization
 ///---------------------

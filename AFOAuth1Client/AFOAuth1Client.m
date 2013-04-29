@@ -154,6 +154,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
 @synthesize signatureMethod = _signatureMethod;
 @synthesize realm = _realm;
 @synthesize oauthAccessMethod = _oauthAccessMethod;
+@synthesize embedInGetParams = _embedInGetParams;
 
 - (id)initWithBaseURL:(NSURL *)url
                   key:(NSString *)clientID
@@ -173,6 +174,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
     self.signatureMethod = AFHMACSHA1SignatureMethod;
 
     self.oauthAccessMethod = @"GET";
+    self.embedInGetParams = NO;
 
     return self;
 }
@@ -349,8 +351,22 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
                                       path:(NSString *)path
                                 parameters:(NSDictionary *)parameters
 {
+    if ( self.embedInGetParams ) {
+        NSMutableDictionary *mutableParameters = parameters ? [parameters mutableCopy] : [NSMutableDictionary dictionary];
+        if (self.key && self.secret) {
+            [mutableParameters addEntriesFromDictionary:[self OAuthParameters]];
+            if (self.accessToken) {
+                [mutableParameters setValue:self.accessToken.key forKey:@"oauth_token"];
+            }
+            [mutableParameters setValue:[self OAuthSignatureForMethod:method path:path parameters:mutableParameters token:self.accessToken] forKey:@"oauth_signature"];
+        }
+        parameters = mutableParameters;
+    }
+    
     NSMutableURLRequest *request = [super requestWithMethod:method path:path parameters:parameters];
-    [request setValue:[self authorizationHeaderForMethod:method path:path parameters:parameters] forHTTPHeaderField:@"Authorization"];
+    if ( !self.embedInGetParams ) {
+        [request setValue:[self authorizationHeaderForMethod:method path:path parameters:parameters] forHTTPHeaderField:@"Authorization"];
+    }
     [request setHTTPShouldHandleCookies:NO];
     
     return request;
