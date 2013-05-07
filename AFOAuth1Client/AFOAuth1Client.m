@@ -473,6 +473,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
     self.key = [decoder decodeObjectForKey:@"key"];
     self.secret = [decoder decodeObjectForKey:@"secret"];
     self.session = [decoder decodeObjectForKey:@"session"];
+    self.verifier = [decoder decodeObjectForKey:@"verifier"];
     self.expiration = [decoder decodeObjectForKey:@"expiration"];
     self.renewable = [decoder decodeBoolForKey:@"renewable"];
 
@@ -483,6 +484,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
     [coder encodeObject:self.key forKey:@"key"];
     [coder encodeObject:self.secret forKey:@"secret"];
     [coder encodeObject:self.session forKey:@"session"];
+    [coder encodeObject:self.verifier forKey:@"verifier"];
     [coder encodeObject:self.expiration forKey:@"expiration"];
     [coder encodeBool:self.renewable forKey:@"renewable"];
 }
@@ -494,6 +496,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
     copy.key = self.key;
     copy.secret = self.secret;
     copy.session = self.session;
+    copy.verifier = self.verifier;
     copy.expiration = self.expiration;
     copy.renewable = self.renewable;
 
