@@ -137,6 +137,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
 @interface AFOAuth1Client ()
 @property (readwrite, nonatomic, copy) NSString *key;
 @property (readwrite, nonatomic, copy) NSString *secret;
+@property (readwrite, nonatomic, strong) id applicationLaunchNotificationObserver;
 
 - (NSDictionary *)OAuthParameters;
 - (NSString *)OAuthSignatureForMethod:(NSString *)method
@@ -155,6 +156,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
 @synthesize realm = _realm;
 @synthesize accessToken = _accessToken;
 @synthesize oauthAccessMethod = _oauthAccessMethod;
+@synthesize applicationLaunchNotificationObserver = _applicationLaunchNotificationObserver;
 
 - (id)initWithBaseURL:(NSURL *)url
                   key:(NSString *)clientID
@@ -176,6 +178,20 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
     self.oauthAccessMethod = @"GET";
 
     return self;
+}
+
+- (void)dealloc {
+    self.applicationLaunchNotificationObserver = nil;
+}
+
+- (void)setApplicationLaunchNotificationObserver:(id)applicationLaunchNotificationObserver {
+    if (_applicationLaunchNotificationObserver) {
+        [[NSNotificationCenter defaultCenter] removeObserver:_applicationLaunchNotificationObserver];
+    }
+
+    [self willChangeValueForKey:@"applicationLaunchNotificationObserver"];
+    _applicationLaunchNotificationObserver = applicationLaunchNotificationObserver;
+    [self didChangeValueForKey:@"applicationLaunchNotificationObserver"];
 }
 
 - (NSDictionary *)OAuthParameters {
@@ -259,7 +275,8 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
 {
     [self acquireOAuthRequestTokenWithPath:requestTokenPath callbackURL:callbackURL accessMethod:(NSString *)accessMethod scope:scope success:^(AFOAuth1Token *requestToken, id responseObject) {
         __block AFOAuth1Token *currentRequestToken = requestToken;
-        [[NSNotificationCenter defaultCenter] addObserverForName:kAFApplicationLaunchedWithURLNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *notification) {
+
+        self.applicationLaunchNotificationObserver = [[NSNotificationCenter defaultCenter] addObserverForName:kAFApplicationLaunchedWithURLNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *notification) {
             NSURL *url = [[notification userInfo] valueForKey:kAFApplicationLaunchOptionsURLKey];
 
             currentRequestToken.verifier = [AFParametersFromQueryString([url query]) valueForKey:@"oauth_verifier"];
