@@ -468,7 +468,6 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
 @synthesize verifier = _verifier;
 @synthesize expiration = _expiration;
 @synthesize renewable = _renewable;
-@dynamic expired;
 
 - (id)initWithQueryString:(NSString *)queryString {
     if (!queryString || [queryString length] == 0) {
@@ -515,6 +514,10 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
     self.renewable = canBeRenewed;
     
     return self;
+}
+
+- (BOOL)isExpired{
+    return [self.expiration compare:[NSDate date]] == NSOrderedDescending;
 }
 
 #pragma mark - NSCoding
