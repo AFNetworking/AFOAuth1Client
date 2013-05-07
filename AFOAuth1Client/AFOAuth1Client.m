@@ -264,10 +264,18 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
             currentRequestToken.verifier = [AFParametersFromQueryString([url query]) valueForKey:@"oauth_verifier"];
 
             [self acquireOAuthAccessTokenWithPath:accessTokenPath requestToken:currentRequestToken accessMethod:accessMethod success:^(AFOAuth1Token * accessToken) {
-                self.accessToken = accessToken;
-
-                if (success) {
-                    success(accessToken);
+                
+                if ( accessToken ) {
+                    self.accessToken = accessToken;
+                    
+                    if (success) {
+                        success(accessToken);
+                    }
+                }
+                else {
+                    if (failure) {
+                        failure(nil);
+                    }
                 }
             } failure:^(NSError *error) {
                 if (failure) {
@@ -437,6 +445,10 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
     }
 
     NSDictionary *attributes = AFParametersFromQueryString(queryString);
+    
+    if ( attributes.count == 0 ) {
+        return nil;
+    }
 
     NSDate *expiration = nil;
     if (attributes[@"oauth_token_duration"]) {
