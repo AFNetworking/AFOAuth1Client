@@ -372,12 +372,6 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
 
 #pragma mark -
 
-NSString * const AFOAuth1TokenEncodingKeyKey = @"AFOAuth1TokenEncodingKeyKey";
-NSString * const AFOAuth1TokenEncodingKeySecret = @"AFOAuth1TokenEncodingKeySecret";
-NSString * const AFOAuth1TokenEncodingKeySession = @"AFOAuth1TokenEncodingKeySession";
-NSString * const AFOAuth1TokenEncodingKeyExpiration = @"AFOAuth1TokenEncodingKeyExpiration";
-NSString * const AFOAuth1TokenEncodingKeyRenewable = @"AFOAuth1TokenEncodingKeyRenewable";
-
 @interface AFOAuth1Token ()
 @property (readwrite, nonatomic, copy) NSString *key;
 @property (readwrite, nonatomic, copy) NSString *secret;
@@ -438,29 +432,29 @@ NSString * const AFOAuth1TokenEncodingKeyRenewable = @"AFOAuth1TokenEncodingKeyR
     return self;
 }
 
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-    [coder encodeObject:self.key forKey:AFOAuth1TokenEncodingKeyKey];
-    [coder encodeObject:self.secret forKey:AFOAuth1TokenEncodingKeySecret];
-    [coder encodeObject:self.session forKey:AFOAuth1TokenEncodingKeySession];
-    [coder encodeObject:self.expiration forKey:AFOAuth1TokenEncodingKeyExpiration];
-    [coder encodeBool:self.renewable forKey:AFOAuth1TokenEncodingKeyRenewable];
-}
+#pragma mark - NSCoding
 
-- (id)initWithCoder:(NSCoder *)decoder
-{
+- (id)initWithCoder:(NSCoder *)decoder {
     self = [super init];
     if (!self) {
-      return nil;
+        return nil;
     }
 
-    self.key = [decoder decodeObjectForKey:AFOAuth1TokenEncodingKeyKey];
-    self.secret = [decoder decodeObjectForKey:AFOAuth1TokenEncodingKeySecret];
-    self.session = [decoder decodeObjectForKey:AFOAuth1TokenEncodingKeySession];
-    self.expiration = [decoder decodeObjectForKey:AFOAuth1TokenEncodingKeyExpiration];
-    self.renewable = [decoder decodeBoolForKey:AFOAuth1TokenEncodingKeyRenewable];
+    self.key = [decoder decodeObjectForKey:@"key"];
+    self.secret = [decoder decodeObjectForKey:@"secret"];
+    self.session = [decoder decodeObjectForKey:@"session"];
+    self.expiration = [decoder decodeObjectForKey:@"expiration"];
+    self.renewable = [decoder decodeBoolForKey:@"renewable"];
 
     return self;
+}
+
+- (void)encodeWithCoder:(NSCoder *)coder {
+    [coder encodeObject:self.key forKey:@"key"];
+    [coder encodeObject:self.secret forKey:@"secret"];
+    [coder encodeObject:self.session forKey:@"session"];
+    [coder encodeObject:self.expiration forKey:@"expiration"];
+    [coder encodeBool:self.renewable forKey:@"renewable"];
 }
 
 @end
