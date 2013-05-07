@@ -398,6 +398,18 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
     [coder encodeObject:self.oauthAccessMethod forKey:@"oauthAccessMethod"];
 }
 
+#pragma mark - NSCopying
+
+- (id)copyWithZone:(NSZone *)zone {
+    AFOAuth1Client *copy = [[[self class] allocWithZone:zone] initWithBaseURL:self.baseURL key:self.key secret:self.secret];
+    copy.signatureMethod = self.signatureMethod;
+    copy.realm = self.realm;
+    copy.accessToken = self.accessToken;
+    copy.oauthAccessMethod = self.oauthAccessMethod;
+
+    return copy;
+}
+
 @end
 
 #pragma mark -
