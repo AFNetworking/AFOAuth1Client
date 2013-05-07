@@ -72,42 +72,26 @@ typedef enum {
 /// @name Authenticating
 ///---------------------
 
+/**
 
+ */
 - (void)authorizeUsingOAuthWithRequestTokenPath:(NSString *)requestTokenPath
                           userAuthorizationPath:(NSString *)userAuthorizationPath
                                     callbackURL:(NSURL *)callbackURL
                                 accessTokenPath:(NSString *)accessTokenPath
                                    accessMethod:(NSString *)accessMethod
                                           scope:(NSString *)scope
-                                        success:(void (^)(AFOAuth1Token *accessToken))success
+                                        success:(void (^)(AFOAuth1Token *accessToken, id responseObject))success
                                         failure:(void (^)(NSError *error))failure;
 
 /**
 
  */
-- (void)authorizeUsingOAuthWithRequestTokenPath:(NSString *)requestTokenPath
-                          userAuthorizationPath:(NSString *)userAuthorizationPath
-                                    callbackURL:(NSURL *)callbackURL
-                                accessTokenPath:(NSString *)accessTokenPath
-                                   accessMethod:(NSString *)accessMethod
-                                        success:(void (^)(AFOAuth1Token *accessToken))success
-                                        failure:(void (^)(NSError *error))failure;
-
-
 - (void)acquireOAuthRequestTokenWithPath:(NSString *)path
-                                callback:(NSURL *)url
+                             callbackURL:(NSURL *)url
                             accessMethod:(NSString *)accessMethod
                                    scope:(NSString *)scope
-                                 success:(void (^)(AFOAuth1Token *requestToken))success
-                                 failure:(void (^)(NSError *error))failure;
-
-/**
-
- */
-- (void)acquireOAuthRequestTokenWithPath:(NSString *)path
-                                callback:(NSURL *)url
-                            accessMethod:(NSString *)accessMethod
-                                 success:(void (^)(AFOAuth1Token *requestToken))success
+                                 success:(void (^)(AFOAuth1Token *requestToken, id responseObject))success
                                  failure:(void (^)(NSError *error))failure;
 
 /**
@@ -116,7 +100,7 @@ typedef enum {
 - (void)acquireOAuthAccessTokenWithPath:(NSString *)path
                            requestToken:(AFOAuth1Token *)requestToken
                            accessMethod:(NSString *)accessMethod
-                                success:(void (^)(AFOAuth1Token *accessToken))success
+                                success:(void (^)(AFOAuth1Token *accessToken, id responseObject))success
                                 failure:(void (^)(NSError *error))failure;
 
 @end
