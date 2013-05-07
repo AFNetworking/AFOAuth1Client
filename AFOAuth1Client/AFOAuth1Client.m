@@ -357,7 +357,26 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
                                       path:(NSString *)path
                                 parameters:(NSDictionary *)parameters
 {
-    NSMutableURLRequest *request = [super requestWithMethod:method path:path parameters:parameters];
+    NSMutableDictionary *requestParameters = [parameters mutableCopy];
+    
+    
+    if ([method isEqual:@"POST"]) {
+        
+        // ensure that our POST body parameters do not include anything prefixed with oauth_
+        // as these are included in the Authorization header (as per http://tools.ietf.org/html/rfc5849#section-3.5)
+        for (NSString* parameterName in parameters) {
+            
+            if ([parameterName hasPrefix:@"oauth_"]) {
+                [requestParameters removeObjectForKey:parameterName];
+            }
+        }
+        
+        
+    }
+    
+    NSMutableURLRequest *request = [super requestWithMethod:method path:path parameters:requestParameters];
+    
+    // note that here we use the FULL parameter string (including oauth_*) for the purposes of signature generation
     [request setValue:[self authorizationHeaderForMethod:method path:path parameters:parameters] forHTTPHeaderField:@"Authorization"];
     [request setHTTPShouldHandleCookies:NO];
     
