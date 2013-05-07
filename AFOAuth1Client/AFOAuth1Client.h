@@ -57,6 +57,13 @@ typedef enum {
  */
 @property (nonatomic, strong) NSString *oauthAccessMethod;
 
+/** Disable including multipart data in OAuth signature.
+
+ Some servers expect what multipart data will be not included in OAuth
+ signature and signing it will cause authentication error.
+ */
+@property (nonatomic, assign, getter = isDisabledMultipartDataInOauth) BOOL disableMultipartDataInOauth;
+
 ///---------------------
 /// @name Initialization
 ///---------------------
