@@ -285,10 +285,12 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
 
         NSMutableDictionary *parameters = [NSMutableDictionary dictionary];
         [parameters setValue:requestToken.key forKey:@"oauth_token"];
+        NSMutableURLRequest *request = [super requestWithMethod:@"GET" path:userAuthorizationPath parameters:parameters];
+        [request setHTTPShouldHandleCookies:NO];
 #if __IPHONE_OS_VERSION_MIN_REQUIRED
-        [[UIApplication sharedApplication] openURL:[[self requestWithMethod:@"GET" path:userAuthorizationPath parameters:parameters] URL]];
+        [[UIApplication sharedApplication] openURL:[request URL]];
 #else
-        [[NSWorkspace sharedWorkspace] openURL:[[self requestWithMethod:@"GET" path:userAuthorizationPath parameters:parameters] URL]];
+        [[NSWorkspace sharedWorkspace] openURL:[request URL]];
 #endif
     } failure:^(NSError *error) {
         if (failure) {
@@ -357,7 +359,15 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
                                       path:(NSString *)path
                                 parameters:(NSDictionary *)parameters
 {
-    NSMutableURLRequest *request = [super requestWithMethod:method path:path parameters:parameters];
+    NSMutableDictionary *requestParameters = [parameters mutableCopy];
+    for (NSString* parameterName in parameters) {
+        if ([parameterName hasPrefix:@"oauth_"]) {
+            [requestParameters removeObjectForKey:parameterName];
+        }
+    }
+    
+    NSMutableURLRequest *request = [super requestWithMethod:method path:path parameters:requestParameters];
+    
     [request setValue:[self authorizationHeaderForMethod:method path:path parameters:parameters] forHTTPHeaderField:@"Authorization"];
     [request setHTTPShouldHandleCookies:NO];
     
