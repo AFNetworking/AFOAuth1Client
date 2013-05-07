@@ -487,4 +487,17 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
     [coder encodeBool:self.renewable forKey:@"renewable"];
 }
 
+#pragma mark - NSCopying
+
+- (id)copyWithZone:(NSZone *)zone {
+    AFOAuth1Token *copy = [[[self class] allocWithZone:zone] init];
+    copy.key = self.key;
+    copy.secret = self.secret;
+    copy.session = self.session;
+    copy.expiration = self.expiration;
+    copy.renewable = self.renewable;
+
+    return copy;
+}
+
 @end
