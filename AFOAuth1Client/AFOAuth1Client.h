@@ -31,7 +31,7 @@ typedef enum {
 /**
 
  */
-@interface AFOAuth1Client : AFHTTPClient
+@interface AFOAuth1Client : AFHTTPClient <NSCoding>
 
 ///-----------------------------------
 /// @name Managing OAuth Configuration

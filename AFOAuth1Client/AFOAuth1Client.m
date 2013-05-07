@@ -153,6 +153,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
 @synthesize secret = _secret;
 @synthesize signatureMethod = _signatureMethod;
 @synthesize realm = _realm;
+@synthesize accessToken = _accessToken;
 @synthesize oauthAccessMethod = _oauthAccessMethod;
 
 - (id)initWithBaseURL:(NSURL *)url
@@ -366,6 +367,35 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
     [request setHTTPShouldHandleCookies:NO];
     
     return request;
+}
+
+#pragma mark - NSCoding
+
+- (id)initWithCoder:(NSCoder *)decoder {
+    self = [super initWithCoder:decoder];
+    if (!self) {
+        return nil;
+    }
+
+    self.key = [decoder decodeObjectForKey:@"key"];
+    self.secret = [decoder decodeObjectForKey:@"secret"];
+    self.signatureMethod = (AFOAuthSignatureMethod)[decoder decodeIntegerForKey:@"signatureMethod"];
+    self.realm = [decoder decodeObjectForKey:@"realm"];
+    self.accessToken = [decoder decodeObjectForKey:@"accessToken"];
+    self.oauthAccessMethod = [decoder decodeObjectForKey:@"oauthAccessMethod"];
+
+    return self;
+}
+
+- (void)encodeWithCoder:(NSCoder *)coder {
+    [super encodeWithCoder:coder];
+    
+    [coder encodeObject:self.key forKey:@"key"];
+    [coder encodeObject:self.secret forKey:@"secret"];
+    [coder encodeInteger:self.signatureMethod forKey:@"signatureMethod"];
+    [coder encodeObject:self.realm forKey:@"realm"];
+    [coder encodeObject:self.accessToken forKey:@"accessToken"];
+    [coder encodeObject:self.oauthAccessMethod forKey:@"oauthAccessMethod"];
 }
 
 @end
