@@ -103,9 +103,9 @@ typedef enum {
                                 success:(void (^)(AFOAuth1Token *accessToken, id responseObject))success
                                 failure:(void (^)(NSError *error))failure;
 
-///---------------------
+///---------------
 /// @name Requests
-///---------------------
+///---------------
 
 /**
 
