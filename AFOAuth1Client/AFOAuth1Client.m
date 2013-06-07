@@ -199,7 +199,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
     [parameters setValue:kAFOAuth1Version forKey:@"oauth_version"];
     [parameters setValue:NSStringFromAFOAuthSignatureMethod(self.signatureMethod) forKey:@"oauth_signature_method"];
     [parameters setValue:self.key forKey:@"oauth_consumer_key"];
-    [parameters setValue:[[NSNumber numberWithInteger:floorf([[NSDate date] timeIntervalSince1970])] stringValue] forKey:@"oauth_timestamp"];
+    [parameters setValue:[[NSNumber numberWithInteger:floor([[NSDate date] timeIntervalSince1970])] stringValue] forKey:@"oauth_timestamp"];
     [parameters setValue:AFNounce() forKey:@"oauth_nonce"];
 
     if (self.realm) {
