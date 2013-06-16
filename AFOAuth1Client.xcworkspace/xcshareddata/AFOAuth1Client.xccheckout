@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDESourceControlProjectIdentifier</key>
+	<string>B7DE59E1-3FD0-401E-A12D-3CDD1E6FE649</string>
+	<key>IDESourceControlProjectName</key>
+	<string>AFOAuth1Client</string>
+	<key>IDESourceControlProjectOriginsDictionary</key>
+	<dict>
+		<key>14FF7027-55BC-469F-8A51-709E1FFC9524</key>
+		<string>git://github.com/AFNetworking/AFNetworking.git</string>
+		<key>7B2CF6E8-1FF5-44A5-BE68-38411FB9E496</key>
+		<string>ssh://github.com/ignazioc/AFOAuth1Client.git</string>
+	</dict>
+	<key>IDESourceControlProjectPath</key>
+	<string>AFOAuth1Client.xcworkspace</string>
+	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
+	<dict>
+		<key>14FF7027-55BC-469F-8A51-709E1FFC9524</key>
+		<string>../AFNetworking</string>
+		<key>7B2CF6E8-1FF5-44A5-BE68-38411FB9E496</key>
+		<string>..</string>
+	</dict>
+	<key>IDESourceControlProjectURL</key>
+	<string>ssh://github.com/ignazioc/AFOAuth1Client.git</string>
+	<key>IDESourceControlProjectVersion</key>
+	<integer>110</integer>
+	<key>IDESourceControlProjectWCCIdentifier</key>
+	<string>7B2CF6E8-1FF5-44A5-BE68-38411FB9E496</string>
+	<key>IDESourceControlProjectWCConfigurations</key>
+	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>14FF7027-55BC-469F-8A51-709E1FFC9524</string>
+			<key>IDESourceControlWCCName</key>
+			<string>AFNetworking</string>
+		</dict>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>7B2CF6E8-1FF5-44A5-BE68-38411FB9E496</string>
+			<key>IDESourceControlWCCName</key>
+			<string>AFOAuth1Client</string>
+		</dict>
+	</array>
+</dict>
+</plist>
