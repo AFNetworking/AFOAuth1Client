@@ -282,7 +282,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
             currentRequestToken.verifier = [AFParametersFromQueryString([url query]) valueForKey:@"oauth_verifier"];
 
             [self acquireOAuthAccessTokenWithPath:accessTokenPath requestToken:currentRequestToken accessMethod:accessMethod success:^(AFOAuth1Token * accessToken, id responseObject) {
-                
+                self.applicationLaunchNotificationObserver = nil;
                 if (accessToken) {
                     self.accessToken = accessToken;
                     
@@ -295,6 +295,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
                     }
                 }
             } failure:^(NSError *error) {
+                self.applicationLaunchNotificationObserver = nil;
                 if (failure) {
                     failure(error);
                 }
