@@ -88,6 +88,8 @@ static NSDictionary * AFParametersFromQueryString(NSString *queryString) {
                 [parameters setValue:[value stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding] forKey:[name stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding]];
             }
         }
+        
+        [parameterScanner release];
     }
 
     return parameters;
