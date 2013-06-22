@@ -35,22 +35,32 @@ didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
     self.window.rootViewController = [[UITableViewController alloc] initWithStyle:UITableViewStylePlain];
     [self.window makeKeyAndVisible];
 
-    self.twitterClient = [[AFOAuth1Client alloc] initWithBaseURL:[NSURL URLWithString:@"https://api.twitter.com/"] key:@"4oFCF0AjP4PQDUaCh5RQ" secret:@"NxAihESVsdUXSUxtHrml2VBHA0xKofYKmmGS01KaSs"];
+    self.twitterClient = [[AFOAuth1Client alloc] initWithBaseURL:[NSURL URLWithString:@"https://api.twitter.com/"]
+                                                             key:@"4oFCF0AjP4PQDUaCh5RQ"
+                                                          secret:@"NxAihESVsdUXSUxtHrml2VBHA0xKofYKmmGS01KaSs"];
 
-    [self.twitterClient authorizeUsingOAuthWithRequestTokenPath:@"oauth/request_token" userAuthorizationPath:@"oauth/authorize" callbackURL:[NSURL URLWithString:@"af-twitter://success"] accessTokenPath:@"oauth/access_token" accessMethod:@"POST" success:^(AFOAuth1Token *accessToken) {
-               
-        [self.twitterClient registerHTTPOperationClass:[AFJSONRequestOperation class]];
-        [self.twitterClient getPath:@"1/statuses/user_timeline.json" parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
-            NSArray *responseArray = (NSArray *)responseObject;
-            [responseArray enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
-                NSLog(@"Success: %@", obj);
-            }];
-        } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
-            NSLog(@"Error: %@", error);
-        }];
-    } failure:^(NSError *error) {
-        NSLog(@"Error: %@", error);
-    }];
+    
+    [self.twitterClient authorizeUsingOAuthWithRequestTokenPath:@"oauth/request_token"
+                                          userAuthorizationPath:@"oauth/authorize"
+                                                    callbackURL:[NSURL URLWithString:@"af-twitter://success"]
+                                                accessTokenPath:@"oauth/access_token"
+                                                   accessMethod:@"POST"
+                                                          scope:nil
+                                                        success:^(AFOAuth1Token *accessToken, id response) {
+                                                            
+                                                            [self.twitterClient registerHTTPOperationClass:[AFJSONRequestOperation class]];
+                                                            [self.twitterClient getPath:@"1.1/statuses/user_timeline.json" parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
+                                                                NSArray *responseArray = (NSArray *)responseObject;
+                                                                [responseArray enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+                                                                    NSLog(@"Success: %@", obj);
+                                                                }];
+                                                            }                                               failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+                                                                NSLog(@"Error: %@", error);
+                                                            }];
+                                                            
+                                                        } failure:^(NSError *error) {
+                                                            NSLog(@"Error: %@", error);
+                                                        }];
     
     return YES;
 }
