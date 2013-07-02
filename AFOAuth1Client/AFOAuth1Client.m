@@ -139,7 +139,6 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
 @property (readwrite, nonatomic, copy) NSString *secret;
 @property (readwrite, nonatomic, strong) id applicationLaunchNotificationObserver;
 
-- (NSDictionary *)OAuthParameters;
 - (NSString *)OAuthSignatureForMethod:(NSString *)method
                                  path:(NSString *)path
                            parameters:(NSDictionary *)parameters
@@ -207,6 +206,12 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
     }
     
     return parameters;
+}
+
+- (NSDictionary *)parametersFromResponseObject:(NSData*)data
+{
+	NSString* responseString = [[NSString alloc]initWithData:data encoding:NSUTF8StringEncoding];
+	return AFParametersFromQueryString(responseString);
 }
 
 - (NSString *)OAuthSignatureForMethod:(NSString *)method
