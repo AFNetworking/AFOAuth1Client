@@ -332,7 +332,6 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
     }
 
     NSMutableURLRequest *request = [self requestWithMethod:accessMethod path:path parameters:parameters];
-    [request setHTTPBody:nil];
 
     AFHTTPRequestOperation *operation = [self HTTPRequestOperationWithRequest:request success:^(AFHTTPRequestOperation *operation, id responseObject) {
         if (success) {
