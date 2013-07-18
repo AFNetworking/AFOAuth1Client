@@ -249,8 +249,17 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
         }
     }];
 
-    [mutableParameters addEntriesFromDictionary:mutableAuthorizationParameters];
-    [mutableAuthorizationParameters setValue:[self OAuthSignatureForMethod:method path:path parameters:mutableParameters token:self.accessToken] forKey:@"oauth_signature"];
+	NSDictionary *parametersForSignature;
+	
+	if ([method isEqualToString:@"GET"] || [method isEqualToString:@"HEAD"] || [method isEqualToString:@"DELETE"] || self.parameterEncoding == AFFormURLParameterEncoding) {
+		[mutableParameters addEntriesFromDictionary:mutableAuthorizationParameters];
+		parametersForSignature = mutableParameters;
+	}
+	else {
+		parametersForSignature = mutableAuthorizationParameters;
+	}
+
+    [mutableAuthorizationParameters setValue:[self OAuthSignatureForMethod:method path:path parameters:parametersForSignature token:self.accessToken] forKey:@"oauth_signature"];
     
     NSArray *sortedComponents = [[AFQueryStringFromParametersWithEncoding(mutableAuthorizationParameters, self.stringEncoding) componentsSeparatedByString:@"&"] sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)];
     NSMutableArray *mutableComponents = [NSMutableArray array];
