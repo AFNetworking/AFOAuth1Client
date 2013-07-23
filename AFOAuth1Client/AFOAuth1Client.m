@@ -256,7 +256,9 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
     NSMutableArray *mutableComponents = [NSMutableArray array];
     for (NSString *component in sortedComponents) {
         NSArray *subcomponents = [component componentsSeparatedByString:@"="];
-        [mutableComponents addObject:[NSString stringWithFormat:@"%@=\"%@\"", [subcomponents objectAtIndex:0], [subcomponents objectAtIndex:1]]];
+        if([subcomponents count] > 1) {
+           [mutableComponents addObject:[NSString stringWithFormat:@"%@=\"%@\"", [subcomponents objectAtIndex:0], [subcomponents objectAtIndex:1]]];
+        }
     }
 
     return [NSString stringWithFormat:kAFOAuth1AuthorizationFormatString, [mutableComponents componentsJoinedByString:@", "]];
