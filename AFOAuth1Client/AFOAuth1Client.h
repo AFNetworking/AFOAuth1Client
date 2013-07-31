@@ -137,8 +137,12 @@ extern NSString * const kAFApplicationLaunchOptionsURLKey;
 @property (readonly, nonatomic, copy) NSString *secret;
 
 /**
+ 
+ */
 @property (readonly, nonatomic, strong) NSDictionary *additionalParameters;
 
+/**
+ 
  */
 @property (readonly, nonatomic, copy) NSString *session;
 
