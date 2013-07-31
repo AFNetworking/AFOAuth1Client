@@ -177,6 +177,8 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
 
     self.oauthAccessMethod = @"GET";
 
+    self.signJSONParameters = YES;
+
     return self;
 }
 
@@ -232,6 +234,10 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
                                 parameters:(NSDictionary *)parameters
 {
     static NSString * const kAFOAuth1AuthorizationFormatString = @"OAuth %@";
+
+    if (self.parameterEncoding == AFJSONParameterEncoding && !self.signJSONParameters) {
+        parameters = nil;
+    }
 
     NSMutableDictionary *mutableParameters = parameters ? [parameters mutableCopy] : [NSMutableDictionary dictionary];
     NSMutableDictionary *mutableAuthorizationParameters = [NSMutableDictionary dictionary];

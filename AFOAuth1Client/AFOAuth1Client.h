@@ -57,6 +57,11 @@ typedef enum {
  */
 @property (nonatomic, strong) NSString *oauthAccessMethod;
 
+/**
+
+ */
+@property (nonatomic) BOOL signJSONParameters;
+
 ///---------------------
 /// @name Initialization
 ///---------------------
