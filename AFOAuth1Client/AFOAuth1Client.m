@@ -235,7 +235,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
 {
     static NSString * const kAFOAuth1AuthorizationFormatString = @"OAuth %@";
 
-    if (self.parameterEncoding == AFJSONParameterEncoding && !self.signJSONParameters) {
+    if (![method isEqualToString:@"GET"] && self.parameterEncoding == AFJSONParameterEncoding && !self.signJSONParameters) {
         parameters = nil;
     }
 
