@@ -116,7 +116,7 @@ static inline NSString * NSStringFromAFOAuthSignatureMethod(AFOAuthSignatureMeth
 
 static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *consumerSecret, NSString *tokenSecret, NSStringEncoding stringEncoding) {
     NSString *secret = tokenSecret ? tokenSecret : @"";
-    NSString *secretString = [NSString stringWithFormat:@"%@&%@", consumerSecret, secret];
+    NSString *secretString = [NSString stringWithFormat:@"%@&%@", AFPercentEscapedQueryStringPairMemberFromStringWithEncoding(consumerSecret, stringEncoding), AFPercentEscapedQueryStringPairMemberFromStringWithEncoding(secret, stringEncoding)];
     NSData *secretStringData = [secretString dataUsingEncoding:stringEncoding];
 
     NSString *queryString = AFPercentEscapedQueryStringPairMemberFromStringWithEncoding([[[[[request URL] query] componentsSeparatedByString:@"&"] sortedArrayUsingSelector:@selector(compare:)] componentsJoinedByString:@"&"], stringEncoding);
