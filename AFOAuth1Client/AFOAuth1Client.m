@@ -369,6 +369,14 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
     [self enqueueHTTPRequestOperation:operation];
 }
 
+- (NSMutableURLRequest *)unauthenticatedRequestWithMethod:(NSString *)method
+                                      path:(NSString *)path
+                                parameters:(NSDictionary *)parameters
+{
+  // Call super (AFHTTPClient) requestWithMethod as we want a URL request without the authentication header and any oauth_ paramaters intact.
+  return [super requestWithMethod:method path:path parameters:parameters];
+}
+
 #pragma mark - AFHTTPClient
 
 - (NSMutableURLRequest *)requestWithMethod:(NSString *)method
