@@ -384,7 +384,11 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
 
     NSMutableURLRequest *request = [super requestWithMethod:method path:path parameters:mutableParameters];
 
-    [request setValue:[self authorizationHeaderForMethod:method path:path parameters:parameters] forHTTPHeaderField:@"Authorization"];
+
+    // Only use parameters in the HTTP POST request body (with a content-type of `application/x-www-form-urlencoded`).
+    // See Section 9.1.1 "Normalize Request Parameters" http://oauth.net/core/1.0/#signing_process
+    NSDictionary *authorizationParameters = ([[request valueForHTTPHeaderField:@"Content-Type"] isEqualToString:@"application/x-www-form-urlencoded"] ? parameters : nil);
+    [request setValue:[self authorizationHeaderForMethod:method path:path parameters:authorizationParameters] forHTTPHeaderField:@"Authorization"];
     [request setHTTPShouldHandleCookies:NO];
     
     return request;
@@ -396,7 +400,11 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
                               constructingBodyWithBlock:(void (^)(id <AFMultipartFormData> formData))block
 {
     NSMutableURLRequest *request = [super multipartFormRequestWithMethod:method path:path parameters:parameters constructingBodyWithBlock:block];
-    [request setValue:[self authorizationHeaderForMethod:method path:path parameters:parameters] forHTTPHeaderField:@"Authorization"];
+
+    // Only use parameters in the HTTP POST request body (with a content-type of `application/x-www-form-urlencoded`).
+    // See Section 9.1.1 "Normalize Request Parameters" http://oauth.net/core/1.0/#signing_process
+    NSDictionary *authorizationParameters = ([[request valueForHTTPHeaderField:@"Content-Type"] isEqualToString:@"application/x-www-form-urlencoded"] ? parameters : nil);
+    [request setValue:[self authorizationHeaderForMethod:method path:path parameters:authorizationParameters] forHTTPHeaderField:@"Authorization"];
     [request setHTTPShouldHandleCookies:NO];
     
     return request;
