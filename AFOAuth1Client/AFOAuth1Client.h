@@ -103,6 +103,15 @@ typedef enum {
                                 success:(void (^)(AFOAuth1Token *accessToken, id responseObject))success
                                 failure:(void (^)(NSError *error))failure;
 
+/**
+ 
+ */
+- (void)acquireXAuthAccessTokenWithPath:(NSString *)path
+                               username:(NSString *)username
+                               password:(NSString *)password
+                                success:(void (^)(AFOAuth1Token *accessToken))success
+                                failure:(void (^)(NSError *error))failure;
+
 @end
 
 ///----------------
