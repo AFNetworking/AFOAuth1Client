@@ -85,7 +85,7 @@ static NSDictionary * AFParametersFromQueryString(NSString *queryString) {
             [parameterScanner scanString:@"&" intoString:NULL];
 
             if (name && value) {
-                [parameters setValue:[value stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding] forKey:[name stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding]];
+                parameters[[name stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding]] = [value stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
             }
         }
     }
@@ -189,16 +189,16 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
 
 - (NSDictionary *)OAuthParameters {
     NSMutableDictionary *parameters = [NSMutableDictionary dictionary];
-    [parameters setValue:kAFOAuth1Version forKey:@"oauth_version"];
-    [parameters setValue:NSStringFromAFOAuthSignatureMethod(self.signatureMethod) forKey:@"oauth_signature_method"];
-    [parameters setValue:self.key forKey:@"oauth_consumer_key"];
-    [parameters setValue:[@(floor([[NSDate date] timeIntervalSince1970])) stringValue] forKey:@"oauth_timestamp"];
-    [parameters setValue:AFNounce() forKey:@"oauth_nonce"];
+    parameters[@"oauth_version"] = kAFOAuth1Version;
+    parameters[@"oauth_signature_method"] = NSStringFromAFOAuthSignatureMethod(self.signatureMethod);
+    parameters[@"oauth_consumer_key"] = self.key;
+    parameters[@"oauth_timestamp"] = [@(floor([[NSDate date] timeIntervalSince1970])) stringValue];
+    parameters[@"oauth_nonce"] = AFNounce();
 
     if (self.realm) {
-        [parameters setValue:self.realm forKey:@"realm"];
+        parameters[@"realm"] = self.realm;
     }
-    
+
     return parameters;
 }
 
@@ -232,18 +232,18 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
     if (self.key && self.secret) {
         [mutableAuthorizationParameters addEntriesFromDictionary:[self OAuthParameters]];
         if (self.accessToken) {
-            [mutableAuthorizationParameters setValue:self.accessToken.key forKey:@"oauth_token"];
+            mutableAuthorizationParameters[@"oauth_token"] = self.accessToken.key;
         }
     }
 
     [mutableParameters enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
         if ([key isKindOfClass:[NSString class]] && [key hasPrefix:@"oauth_"]) {
-            [mutableAuthorizationParameters setValue:obj forKey:key];
+            mutableAuthorizationParameters[key] = obj;
         }
     }];
 
     [mutableParameters addEntriesFromDictionary:mutableAuthorizationParameters];
-    [mutableAuthorizationParameters setValue:[self OAuthSignatureForMethod:method path:path parameters:mutableParameters token:self.accessToken] forKey:@"oauth_signature"];
+    mutableAuthorizationParameters[@"oauth_signature"] = [self OAuthSignatureForMethod:method path:path parameters:mutableParameters token:self.accessToken];
     
     NSArray *sortedComponents = [[AFQueryStringFromParametersWithEncoding(mutableAuthorizationParameters, self.stringEncoding) componentsSeparatedByString:@"&"] sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)];
     NSMutableArray *mutableComponents = [NSMutableArray array];
@@ -296,7 +296,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
         }];
 
         NSMutableDictionary *parameters = [NSMutableDictionary dictionary];
-        [parameters setValue:requestToken.key forKey:@"oauth_token"];
+        parameters[@"oauth_token"] = requestToken.key;
         NSMutableURLRequest *request = [super requestWithMethod:@"GET" path:userAuthorizationPath parameters:parameters];
         [request setHTTPShouldHandleCookies:NO];
 #if __IPHONE_OS_VERSION_MIN_REQUIRED
@@ -319,9 +319,9 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
                                  failure:(void (^)(NSError *error))failure
 {
     NSMutableDictionary *parameters = [[self OAuthParameters] mutableCopy];
-    [parameters setValue:[callbackURL absoluteString] forKey:@"oauth_callback"];
+    parameters[@"oauth_callback"] = [callbackURL absoluteString];
     if (scope && !self.accessToken) {
-        [parameters setValue:scope forKey:@"scope"];
+        parameters[@"scope"] = scope;
     }
 
     NSMutableURLRequest *request = [self requestWithMethod:accessMethod path:path parameters:parameters];
@@ -350,8 +350,8 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
     self.accessToken = requestToken;
 
     NSMutableDictionary *parameters = [[self OAuthParameters] mutableCopy];
-    [parameters setValue:requestToken.key forKey:@"oauth_token"];
-    [parameters setValue:requestToken.verifier forKey:@"oauth_verifier"];
+    parameters[@"oauth_token"] = requestToken.key;
+    parameters[@"oauth_verifier"] = requestToken.verifier;
 
     NSMutableURLRequest *request = [self requestWithMethod:accessMethod path:path parameters:parameters];
 
