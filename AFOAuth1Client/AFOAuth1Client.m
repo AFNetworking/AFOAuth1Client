@@ -386,7 +386,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
 
 
     // Only use parameters in the HTTP POST request body (with a content-type of `application/x-www-form-urlencoded`).
-    // See Section 9.1.1 "Normalize Request Parameters" http://oauth.net/core/1.0/#signing_process
+    // See RFC 5849, Section 3.4.1.3.1 http://tools.ietf.org/html/rfc5849#section-3.4
     NSDictionary *authorizationParameters = ([[request valueForHTTPHeaderField:@"Content-Type"] isEqualToString:@"application/x-www-form-urlencoded"] ? parameters : nil);
     [request setValue:[self authorizationHeaderForMethod:method path:path parameters:authorizationParameters] forHTTPHeaderField:@"Authorization"];
     [request setHTTPShouldHandleCookies:NO];
@@ -402,7 +402,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
     NSMutableURLRequest *request = [super multipartFormRequestWithMethod:method path:path parameters:parameters constructingBodyWithBlock:block];
 
     // Only use parameters in the HTTP POST request body (with a content-type of `application/x-www-form-urlencoded`).
-    // See Section 9.1.1 "Normalize Request Parameters" http://oauth.net/core/1.0/#signing_process
+    // See RFC 5849, Section 3.4.1.3.1 http://tools.ietf.org/html/rfc5849#section-3.4
     NSDictionary *authorizationParameters = ([[request valueForHTTPHeaderField:@"Content-Type"] isEqualToString:@"application/x-www-form-urlencoded"] ? parameters : nil);
     [request setValue:[self authorizationHeaderForMethod:method path:path parameters:authorizationParameters] forHTTPHeaderField:@"Authorization"];
     [request setHTTPShouldHandleCookies:NO];
