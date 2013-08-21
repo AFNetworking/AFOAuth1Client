@@ -137,7 +137,12 @@ extern NSString * const kAFApplicationLaunchOptionsURLKey;
 @property (readonly, nonatomic, copy) NSString *secret;
 
 /**
+ 
+ */
+@property (readonly, nonatomic, strong) NSDictionary *additionalParameters;
 
+/**
+ 
  */
 @property (readonly, nonatomic, copy) NSString *session;
 
@@ -169,6 +174,7 @@ extern NSString * const kAFApplicationLaunchOptionsURLKey;
            secret:(NSString *)secret
           session:(NSString *)session
        expiration:(NSDate *)expiration
-        renewable:(BOOL)canBeRenewed;
+        renewable:(BOOL)canBeRenewed
+additionalParameters:(NSDictionary *)parameters;
 
 @end
