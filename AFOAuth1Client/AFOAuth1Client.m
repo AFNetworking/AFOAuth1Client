@@ -469,6 +469,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
 @synthesize verifier = _verifier;
 @synthesize expiration = _expiration;
 @synthesize renewable = _renewable;
+@synthesize userInfo = _userInfo;
 
 - (id)initWithQueryString:(NSString *)queryString {
     if (!queryString || [queryString length] == 0) {
@@ -477,21 +478,37 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
 
     NSDictionary *attributes = AFParametersFromQueryString(queryString);
     
-    if (attributes.count == 0) {
+    if ([attributes count] == 0) {
         return nil;
     }
 
+    NSString *key = [attributes objectForKey:@"oauth_token"];
+    NSString *secret = [attributes objectForKey:@"oauth_token_secret"];
+    NSString *session = [attributes objectForKey:@"oauth_session_handle"];
+    
     NSDate *expiration = nil;
-    if (attributes[@"oauth_token_duration"]) {
+    if ([attributes objectForKey:@"oauth_token_duration"]) {
         expiration = [NSDate dateWithTimeIntervalSinceNow:[[attributes objectForKey:@"oauth_token_duration"] doubleValue]];
     }
 
     BOOL canBeRenewed = NO;
-    if (attributes[@"oauth_token_renewable"]) {
+    if ([attributes objectForKey:@"oauth_token_renewable"]) {
         canBeRenewed = AFQueryStringValueIsTrue([attributes objectForKey:@"oauth_token_renewable"]);
     }
 
-    return [self initWithKey:[attributes objectForKey:@"oauth_token"] secret:[attributes objectForKey:@"oauth_token_secret"] session:[attributes objectForKey:@"oauth_session_handle"] expiration:expiration renewable:canBeRenewed];
+    self = [self initWithKey:key secret:secret session:session expiration:expiration renewable:canBeRenewed];
+    if (!self) {
+        return nil;
+    }
+
+    NSMutableDictionary *mutableUserInfo = [attributes mutableCopy];
+    [mutableUserInfo removeObjectsForKeys:[NSArray arrayWithObjects:@"oauth_token", @"oauth_token_secret", @"oauth_session_handle", @"oauth_token_duration", @"oauth_token_renewable", nil]];
+
+    if ([mutableUserInfo count] > 0) {
+        self.userInfo = [NSDictionary dictionaryWithDictionary:mutableUserInfo];
+    }
+
+    return self;
 }
 
 - (id)initWithKey:(NSString *)key
@@ -535,6 +552,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
     self.verifier = [decoder decodeObjectForKey:@"verifier"];
     self.expiration = [decoder decodeObjectForKey:@"expiration"];
     self.renewable = [decoder decodeBoolForKey:@"renewable"];
+    self.userInfo = [decoder decodeObjectForKey:@"userInfo"];
 
     return self;
 }
@@ -546,6 +564,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
     [coder encodeObject:self.verifier forKey:@"verifier"];
     [coder encodeObject:self.expiration forKey:@"expiration"];
     [coder encodeBool:self.renewable forKey:@"renewable"];
+    [coder encodeObject:self.userInfo forKey:@"userInfo"];
 }
 
 #pragma mark - NSCopying
@@ -558,6 +577,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
     copy.verifier = self.verifier;
     copy.expiration = self.expiration;
     copy.renewable = self.renewable;
+    copy.userInfo = self.userInfo;
 
     return copy;
 }

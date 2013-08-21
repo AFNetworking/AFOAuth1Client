@@ -158,6 +158,11 @@ extern NSString * const kAFApplicationLaunchOptionsURLKey;
 @property (readonly, nonatomic, assign, getter = isExpired) BOOL expired;
 
 /**
+ 
+ */
+@property (nonatomic, strong) NSDictionary *userInfo;
+
+/**
 
  */
 - (id)initWithQueryString:(NSString *)queryString;
