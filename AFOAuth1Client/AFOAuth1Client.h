@@ -177,7 +177,6 @@ extern NSString * const kAFApplicationLaunchOptionsURLKey;
         renewable:(BOOL)canBeRenewed;
 
 #ifdef _SECURITY_SECITEM_H_
-
 ///---------------------
 /// @name Authenticating
 ///---------------------

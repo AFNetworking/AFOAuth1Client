@@ -20,6 +20,7 @@
 		3B95202D16944D7900BAF7F8 /* AFURLConnectionOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 3B95202216944D7900BAF7F8 /* AFURLConnectionOperation.m */; };
 		3B95202E16944D7900BAF7F8 /* AFXMLRequestOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 3B95202416944D7900BAF7F8 /* AFXMLRequestOperation.m */; };
 		3B95202F16944D7900BAF7F8 /* UIImageView+AFNetworking.m in Sources */ = {isa = PBXBuildFile; fileRef = 3B95202616944D7900BAF7F8 /* UIImageView+AFNetworking.m */; };
+		F83DA16317C579A4006C3DB5 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F83DA16217C579A4006C3DB5 /* Security.framework */; };
 		F8E8694C16ADDA2800CD328E /* AFOAuth1Client.m in Sources */ = {isa = PBXBuildFile; fileRef = F8E8694B16ADDA2800CD328E /* AFOAuth1Client.m */; };
 		F8E8695F16ADDE1D00CD328E /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F8E8695E16ADDE1D00CD328E /* SystemConfiguration.framework */; };
 /* End PBXBuildFile section */
@@ -55,6 +56,7 @@
 		3B95202416944D7900BAF7F8 /* AFXMLRequestOperation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AFXMLRequestOperation.m; sourceTree = "<group>"; };
 		3B95202516944D7900BAF7F8 /* UIImageView+AFNetworking.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIImageView+AFNetworking.h"; sourceTree = "<group>"; };
 		3B95202616944D7900BAF7F8 /* UIImageView+AFNetworking.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UIImageView+AFNetworking.m"; sourceTree = "<group>"; };
+		F83DA16217C579A4006C3DB5 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 		F8E8694A16ADDA2800CD328E /* AFOAuth1Client.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AFOAuth1Client.h; sourceTree = "<group>"; };
 		F8E8694B16ADDA2800CD328E /* AFOAuth1Client.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AFOAuth1Client.m; sourceTree = "<group>"; };
 		F8E8695E16ADDE1D00CD328E /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
@@ -65,6 +67,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F83DA16317C579A4006C3DB5 /* Security.framework in Frameworks */,
 				F8E8695F16ADDE1D00CD328E /* SystemConfiguration.framework in Frameworks */,
 				3B951FF416944D5B00BAF7F8 /* Cocoa.framework in Frameworks */,
 			);
@@ -94,6 +97,7 @@
 		3B951FF216944D5B00BAF7F8 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				F83DA16217C579A4006C3DB5 /* Security.framework */,
 				F8E8695E16ADDE1D00CD328E /* SystemConfiguration.framework */,
 				3B951FF316944D5B00BAF7F8 /* Cocoa.framework */,
 				3B951FF516944D5B00BAF7F8 /* Other Frameworks */,

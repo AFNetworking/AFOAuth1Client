@@ -134,13 +134,12 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
 
 NSString * const kAFOAuthCredentialServiceName = @"AFOAuthCredentialService";
 
-static NSMutableDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifier) {
-    NSMutableDictionary *queryDictionary = [NSMutableDictionary dictionaryWithObjectsAndKeys:(__bridge id)kSecClassGenericPassword, kSecClass, kAFOAuthCredentialServiceName, kSecAttrService, nil];
-    [queryDictionary setValue:identifier forKey:(__bridge id)kSecAttrAccount];
-    
-    return queryDictionary;
+static NSDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifier) {
+    return @{(__bridge id)kSecClass: (__bridge id)kSecClassGenericPassword,
+             (__bridge id)kSecAttrAccount: identifier,
+             (__bridge id)kSecAttrService: kAFOAuthCredentialServiceName
+             };
 }
-
 
 #pragma mark -
 
@@ -544,6 +543,69 @@ static NSMutableDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *i
     return [self.expiration compare:[NSDate date]] == NSOrderedDescending;
 }
 
+#pragma mark -
+
++ (AFOAuth1Token *)retrieveCredentialWithIdentifier:(NSString *)identifier {
+    NSMutableDictionary *mutableQueryDictionary = [AFKeychainQueryDictionaryWithIdentifier(identifier) mutableCopy];
+    mutableQueryDictionary[(__bridge id)kSecReturnData] = (__bridge id)kCFBooleanTrue;
+    mutableQueryDictionary[(__bridge id)kSecMatchLimit] = (__bridge id)kSecMatchLimitOne;
+
+    CFDataRef result = nil;
+    OSStatus status = SecItemCopyMatching((__bridge CFDictionaryRef)mutableQueryDictionary, (CFTypeRef *)&result);
+
+    if (status != errSecSuccess) {
+        NSLog(@"Unable to fetch credential with identifier \"%@\" (Error %li)", identifier, (long int)status);
+        return nil;
+    }
+
+    NSData *data = (__bridge_transfer NSData *)result;
+    AFOAuth1Token *credential = [NSKeyedUnarchiver unarchiveObjectWithData:data];
+
+    return credential;
+}
+
++ (BOOL)deleteCredentialWithIdentifier:(NSString *)identifier {
+    NSMutableDictionary *mutableQueryDictionary = [AFKeychainQueryDictionaryWithIdentifier(identifier) mutableCopy];
+
+    OSStatus status = SecItemDelete((__bridge CFDictionaryRef)mutableQueryDictionary);
+
+    if (status != errSecSuccess) {
+        NSLog(@"Unable to delete credential with identifier \"%@\" (Error %li)", identifier, (long int)status);
+    }
+
+    return (status == errSecSuccess);
+}
+
++ (BOOL)storeCredential:(AFOAuth1Token *)credential
+         withIdentifier:(NSString *)identifier
+{
+    NSMutableDictionary *mutableQueryDictionary = [AFKeychainQueryDictionaryWithIdentifier(identifier) mutableCopy];
+
+    if (!credential) {
+        return [self deleteCredentialWithIdentifier:identifier];
+    }
+
+    NSMutableDictionary *mutableUpdateDictionary = [NSMutableDictionary dictionary];
+    NSData *data = [NSKeyedArchiver archivedDataWithRootObject:credential];
+    mutableUpdateDictionary[(__bridge id)kSecValueData] = data;
+
+    OSStatus status;
+    BOOL exists = !![self retrieveCredentialWithIdentifier:identifier];
+
+    if (exists) {
+        status = SecItemUpdate((__bridge CFDictionaryRef)mutableQueryDictionary, (__bridge CFDictionaryRef)mutableUpdateDictionary);
+    } else {
+        [mutableQueryDictionary addEntriesFromDictionary:mutableUpdateDictionary];
+        status = SecItemAdd((__bridge CFDictionaryRef)mutableQueryDictionary, NULL);
+    }
+
+    if (status != errSecSuccess) {
+        NSLog(@"Unable to %@ credential with identifier \"%@\" (Error %li)", exists ? @"update" : @"add", identifier, (long int)status);
+    }
+
+    return (status == errSecSuccess);
+}
+
 #pragma mark - NSCoding
 
 - (id)initWithCoder:(NSCoder *)decoder {
@@ -571,69 +633,6 @@ static NSMutableDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *i
     [coder encodeObject:self.expiration forKey:@"expiration"];
     [coder encodeBool:self.renewable forKey:@"renewable"];
     [coder encodeObject:self.userInfo forKey:@"userInfo"];
-}
-
-#pragma mark - Token storage
-
-
-+ (AFOAuth1Token *)retrieveCredentialWithIdentifier:(NSString *)identifier {
-    NSMutableDictionary *queryDictionary = AFKeychainQueryDictionaryWithIdentifier(identifier);
-    [queryDictionary setObject:(__bridge id)kCFBooleanTrue forKey:(__bridge id)kSecReturnData];
-    [queryDictionary setObject:(__bridge id)kSecMatchLimitOne forKey:(__bridge id)kSecMatchLimit];
-    
-    CFDataRef result = nil;
-    OSStatus status = SecItemCopyMatching((__bridge CFDictionaryRef)queryDictionary, (CFTypeRef *)&result);
-    
-    if (status != errSecSuccess) {
-        NSLog(@"Unable to fetch credential with identifier \"%@\" (Error %li)", identifier, (long int)status);
-        return nil;
-    }
-    
-    NSData *data = (__bridge_transfer NSData *)result;
-    AFOAuth1Token *credential = [NSKeyedUnarchiver unarchiveObjectWithData:data];
-    
-    return credential;
-}
-+ (BOOL)deleteCredentialWithIdentifier:(NSString *)identifier {
-    NSMutableDictionary *queryDictionary = AFKeychainQueryDictionaryWithIdentifier(identifier);
-    
-    OSStatus status = SecItemDelete((__bridge CFDictionaryRef)queryDictionary);
-    
-    if (status != errSecSuccess) {
-        NSLog(@"Unable to delete credential with identifier \"%@\" (Error %li)", identifier, (long int)status);
-    }
-    
-    return (status == errSecSuccess);
-    
-}
-+ (BOOL)storeCredential:(AFOAuth1Token *)credential
-         withIdentifier:(NSString *)identifier {
-    NSMutableDictionary *queryDictionary = AFKeychainQueryDictionaryWithIdentifier(identifier);
-    
-    if (!credential) {
-        return [self deleteCredentialWithIdentifier:identifier];
-    }
-    
-    NSMutableDictionary *updateDictionary = [NSMutableDictionary dictionary];
-    NSData *data = [NSKeyedArchiver archivedDataWithRootObject:credential];
-    [updateDictionary setObject:data forKey:(__bridge id)kSecValueData];
-    
-    OSStatus status;
-    BOOL exists = ([self retrieveCredentialWithIdentifier:identifier] != nil);
-    
-    if (exists) {
-        status = SecItemUpdate((__bridge CFDictionaryRef)queryDictionary, (__bridge CFDictionaryRef)updateDictionary);
-    } else {
-        [queryDictionary addEntriesFromDictionary:updateDictionary];
-        status = SecItemAdd((__bridge CFDictionaryRef)queryDictionary, NULL);
-    }
-    
-    if (status != errSecSuccess) {
-        NSLog(@"Unable to %@ credential with identifier \"%@\" (Error %li)", exists ? @"update" : @"add", identifier, (long int)status);
-    }
-    
-    return (status == errSecSuccess);
-    
 }
 
 #pragma mark - NSCopying
