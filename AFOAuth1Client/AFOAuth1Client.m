@@ -192,7 +192,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
     [parameters setValue:kAFOAuth1Version forKey:@"oauth_version"];
     [parameters setValue:NSStringFromAFOAuthSignatureMethod(self.signatureMethod) forKey:@"oauth_signature_method"];
     [parameters setValue:self.key forKey:@"oauth_consumer_key"];
-    [parameters setValue:[[NSNumber numberWithInteger:floor([[NSDate date] timeIntervalSince1970])] stringValue] forKey:@"oauth_timestamp"];
+    [parameters setValue:[@(floor([[NSDate date] timeIntervalSince1970])) stringValue] forKey:@"oauth_timestamp"];
     [parameters setValue:AFNounce() forKey:@"oauth_nonce"];
 
     if (self.realm) {
@@ -249,7 +249,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
     NSMutableArray *mutableComponents = [NSMutableArray array];
     for (NSString *component in sortedComponents) {
         NSArray *subcomponents = [component componentsSeparatedByString:@"="];
-        [mutableComponents addObject:[NSString stringWithFormat:@"%@=\"%@\"", [subcomponents objectAtIndex:0], [subcomponents objectAtIndex:1]]];
+        [mutableComponents addObject:[NSString stringWithFormat:@"%@=\"%@\"", subcomponents[0], subcomponents[1]]];
     }
 
     return [NSString stringWithFormat:kAFOAuth1AuthorizationFormatString, [mutableComponents componentsJoinedByString:@", "]];
@@ -468,18 +468,18 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
         return nil;
     }
 
-    NSString *key = [attributes objectForKey:@"oauth_token"];
-    NSString *secret = [attributes objectForKey:@"oauth_token_secret"];
-    NSString *session = [attributes objectForKey:@"oauth_session_handle"];
+    NSString *key = attributes[@"oauth_token"];
+    NSString *secret = attributes[@"oauth_token_secret"];
+    NSString *session = attributes[@"oauth_session_handle"];
     
     NSDate *expiration = nil;
-    if ([attributes objectForKey:@"oauth_token_duration"]) {
-        expiration = [NSDate dateWithTimeIntervalSinceNow:[[attributes objectForKey:@"oauth_token_duration"] doubleValue]];
+    if (attributes[@"oauth_token_duration"]) {
+        expiration = [NSDate dateWithTimeIntervalSinceNow:[attributes[@"oauth_token_duration"] doubleValue]];
     }
 
     BOOL canBeRenewed = NO;
-    if ([attributes objectForKey:@"oauth_token_renewable"]) {
-        canBeRenewed = AFQueryStringValueIsTrue([attributes objectForKey:@"oauth_token_renewable"]);
+    if (attributes[@"oauth_token_renewable"]) {
+        canBeRenewed = AFQueryStringValueIsTrue(attributes[@"oauth_token_renewable"]);
     }
 
     self = [self initWithKey:key secret:secret session:session expiration:expiration renewable:canBeRenewed];
@@ -488,7 +488,7 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
     }
 
     NSMutableDictionary *mutableUserInfo = [attributes mutableCopy];
-    [mutableUserInfo removeObjectsForKeys:[NSArray arrayWithObjects:@"oauth_token", @"oauth_token_secret", @"oauth_session_handle", @"oauth_token_duration", @"oauth_token_renewable", nil]];
+    [mutableUserInfo removeObjectsForKeys:@[@"oauth_token", @"oauth_token_secret", @"oauth_session_handle", @"oauth_token_duration", @"oauth_token_renewable"]];
 
     if ([mutableUserInfo count] > 0) {
         self.userInfo = [NSDictionary dictionaryWithDictionary:mutableUserInfo];
