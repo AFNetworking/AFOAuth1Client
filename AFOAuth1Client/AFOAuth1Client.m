@@ -150,13 +150,6 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
 @end
 
 @implementation AFOAuth1Client
-@synthesize key = _key;
-@synthesize secret = _secret;
-@synthesize signatureMethod = _signatureMethod;
-@synthesize realm = _realm;
-@synthesize accessToken = _accessToken;
-@synthesize oauthAccessMethod = _oauthAccessMethod;
-@synthesize applicationLaunchNotificationObserver = _applicationLaunchNotificationObserver;
 
 - (id)initWithBaseURL:(NSURL *)url
                   key:(NSString *)clientID
@@ -463,13 +456,6 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
 @end
 
 @implementation AFOAuth1Token
-@synthesize key = _key;
-@synthesize secret = _secret;
-@synthesize session = _session;
-@synthesize verifier = _verifier;
-@synthesize expiration = _expiration;
-@synthesize renewable = _renewable;
-@synthesize userInfo = _userInfo;
 
 - (id)initWithQueryString:(NSString *)queryString {
     if (!queryString || [queryString length] == 0) {
