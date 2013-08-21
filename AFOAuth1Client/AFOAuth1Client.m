@@ -227,8 +227,8 @@ static inline NSString * AFHMACSHA1Signature(NSURLRequest *request, NSString *co
     }
 }
 
-- (NSString *)authorizationHeaderForMethod:(NSString*)method
-                                      path:(NSString*)path
+- (NSString *)authorizationHeaderForMethod:(NSString *)method
+                                      path:(NSString *)path
                                 parameters:(NSDictionary *)parameters
 {
     static NSString * const kAFOAuth1AuthorizationFormatString = @"OAuth %@";
