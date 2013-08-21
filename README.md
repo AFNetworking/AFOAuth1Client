@@ -2,9 +2,9 @@
 
 ## Instructions
 
-Register your application to [launch from a custom URL scheme](http://iphonedevelopertips.com/cocoa/launching-your-own-application-via-a-custom-url-scheme.html), and use that with the path `/success` as your callback URL.
+Register your application to [launch from a custom URL scheme](http://iphonedevelopertips.com/cocoa/launching-your-own-application-via-a-custom-url-scheme.html), and use that with the path `/success` as your callback URL.  The callback for the custom URL scheme should send a notification, which will complete the OAuth transaction.
 
-Here's how it all looks together:
+Here's how to create a client and authenticate:
 
 ``` objective-c
 AFOAuth1Client *twitterClient = [[[AFOAuth1Client alloc] initWithBaseURL:[NSURL URLWithString:@"https://twitter.com/oauth/"] key:@"..." secret:@"..."] autorelease];
@@ -15,6 +15,21 @@ AFOAuth1Client *twitterClient = [[[AFOAuth1Client alloc] initWithBaseURL:[NSURL 
 } failure:^(NSError *error) {
     NSLog(@"Error: %@", error);
 }];
+```
+
+Here's how to respond to the custom URL scheme on iOS: 
+
+``` objective-c
+- (BOOL)application:(UIApplication *)application
+            openURL:(NSURL *)url
+  sourceApplication:(NSString *)sourceApplication
+         annotation:(id)annotation
+{
+    NSNotification *notification = [NSNotification notificationWithName:kAFApplicationLaunchedWithURLNotification object:nil userInfo:[NSDictionary dictionaryWithObject:url forKey:kAFApplicationLaunchOptionsURLKey]];
+    [[NSNotificationCenter defaultCenter] postNotification:notification];
+
+    return YES;
+}
 ```
 
 ## Contact
