@@ -364,7 +364,7 @@ static NSDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifi
     parameters[@"oauth_token"] = requestToken.key;
 
     if (requestToken.session) {
-        // Access token is renewal with existing access token
+        // Access token renewal with existing access token
         // Unfortunatly `requestToken.canBeRenewed` doesn't work for me here.
         // c.f. http://wiki.oauth.net/w/page/12238549/ScalableOAuth#AccessTokenRenewal
         parameters[@"oauth_session_handle"] = requestToken.session;
