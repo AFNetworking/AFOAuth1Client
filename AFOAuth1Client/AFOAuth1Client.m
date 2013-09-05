@@ -179,6 +179,14 @@ static NSDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifi
 
     self.oauthAccessMethod = @"GET";
 
+    self.onServiceProviderRequest = ^(NSURLRequest *request) {
+#if __IPHONE_OS_VERSION_MIN_REQUIRED
+        [[UIApplication sharedApplication] openURL:request.URL];
+#else
+        [[NSWorkspace sharedWorkspace] openURL:request.URL];
+#endif
+    };
+
     return self;
 }
 
@@ -281,8 +289,9 @@ static NSDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifi
         __block AFOAuth1Token *currentRequestToken = requestToken;
 
         self.applicationLaunchNotificationObserver = [[NSNotificationCenter defaultCenter] addObserverForName:kAFApplicationLaunchedWithURLNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *notification) {
+            if (self.onServiceProviderRequestFinished)
+                self.onServiceProviderRequestFinished();
             NSURL *url = [[notification userInfo] valueForKey:kAFApplicationLaunchOptionsURLKey];
-
             currentRequestToken.verifier = [AFParametersFromQueryString([url query]) valueForKey:@"oauth_verifier"];
 
             [self acquireOAuthAccessTokenWithPath:accessTokenPath requestToken:currentRequestToken accessMethod:accessMethod success:^(AFOAuth1Token * accessToken, id responseObject) {
@@ -310,11 +319,7 @@ static NSDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifi
         parameters[@"oauth_token"] = requestToken.key;
         NSMutableURLRequest *request = [super requestWithMethod:@"GET" path:userAuthorizationPath parameters:parameters];
         [request setHTTPShouldHandleCookies:NO];
-#if __IPHONE_OS_VERSION_MIN_REQUIRED
-        [[UIApplication sharedApplication] openURL:[request URL]];
-#else
-        [[NSWorkspace sharedWorkspace] openURL:[request URL]];
-#endif
+        self.onServiceProviderRequest(request);
     } failure:^(NSError *error) {
         if (failure) {
             failure(error);

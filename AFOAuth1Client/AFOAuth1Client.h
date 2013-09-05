@@ -57,6 +57,17 @@ typedef enum {
  */
 @property (nonatomic, strong) NSString *oauthAccessMethod;
 
+/**
+ 
+ */
+@property (nonatomic, copy) void (^onServiceProviderRequest)(NSURLRequest* request);
+
+/**
+ 
+ */
+@property (nonatomic, copy) void (^onServiceProviderRequestFinished)();
+
+
 ///---------------------
 /// @name Initialization
 ///---------------------
