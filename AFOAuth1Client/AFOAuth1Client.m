@@ -358,6 +358,12 @@ static NSDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifi
                                 success:(void (^)(AFOAuth1Token *accessToken, id responseObject))success
                                 failure:(void (^)(NSError *error))failure
 {
+    if (!requestToken.key || !requestToken.verifier) {
+        // request was cancelled
+        success(nil, nil);
+        return;
+    }
+
     self.accessToken = requestToken;
 
     NSMutableDictionary *parameters = [[self OAuthParameters] mutableCopy];
