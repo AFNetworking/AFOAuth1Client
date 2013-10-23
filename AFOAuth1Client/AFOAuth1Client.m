@@ -589,6 +589,13 @@ static NSDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifi
 + (BOOL)storeCredential:(AFOAuth1Token *)credential
          withIdentifier:(NSString *)identifier
 {
+    return [[self class] storeCredential:credential withIdentifier:identifier withAccessibility:(__bridge id)kSecAttrAccessibleWhenUnlocked];
+}
+
++ (BOOL)storeCredential:(AFOAuth1Token *)credential
+         withIdentifier:(NSString *)identifier
+      withAccessibility:(id)securityAccessibility
+{
     NSMutableDictionary *mutableQueryDictionary = [AFKeychainQueryDictionaryWithIdentifier(identifier) mutableCopy];
 
     if (!credential) {
@@ -598,6 +605,7 @@ static NSDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifi
     NSMutableDictionary *mutableUpdateDictionary = [NSMutableDictionary dictionary];
     NSData *data = [NSKeyedArchiver archivedDataWithRootObject:credential];
     mutableUpdateDictionary[(__bridge id)kSecValueData] = data;
+    [mutableUpdateDictionary setObject:securityAccessibility forKey:(__bridge id)kSecAttrAccessible];
 
     OSStatus status;
     BOOL exists = !![self retrieveCredentialWithIdentifier:identifier];
