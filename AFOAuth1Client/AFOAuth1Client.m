@@ -358,26 +358,32 @@ static NSDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifi
                                 success:(void (^)(AFOAuth1Token *accessToken, id responseObject))success
                                 failure:(void (^)(NSError *error))failure
 {
-    self.accessToken = requestToken;
-
-    NSMutableDictionary *parameters = [[self OAuthParameters] mutableCopy];
-    parameters[@"oauth_token"] = requestToken.key;
-    parameters[@"oauth_verifier"] = requestToken.verifier;
-
-    NSMutableURLRequest *request = [self requestWithMethod:accessMethod path:path parameters:parameters];
-
-    AFHTTPRequestOperation *operation = [self HTTPRequestOperationWithRequest:request success:^(AFHTTPRequestOperation *operation, id responseObject) {
-        if (success) {
-            AFOAuth1Token *accessToken = [[AFOAuth1Token alloc] initWithQueryString:operation.responseString];
-            success(accessToken, responseObject);
-        }
-    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
-        if (failure) {
-            failure(error);
-        }
-    }];
-
-    [self enqueueHTTPRequestOperation:operation];
+    if (requestToken.key && requestToken.verifier) {
+        self.accessToken = requestToken;
+        
+        NSMutableDictionary *parameters = [[self OAuthParameters] mutableCopy];
+        parameters[@"oauth_token"] = requestToken.key;
+        parameters[@"oauth_verifier"] = requestToken.verifier;
+        
+        NSMutableURLRequest *request = [self requestWithMethod:accessMethod path:path parameters:parameters];
+        
+        AFHTTPRequestOperation *operation = [self HTTPRequestOperationWithRequest:request success:^(AFHTTPRequestOperation *operation, id responseObject) {
+            if (success) {
+                AFOAuth1Token *accessToken = [[AFOAuth1Token alloc] initWithQueryString:operation.responseString];
+                success(accessToken, responseObject);
+            }
+        } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+            if (failure) {
+                failure(error);
+            }
+        }];
+        
+        [self enqueueHTTPRequestOperation:operation];
+    } else {
+        NSDictionary *userInfo = [NSDictionary dictionaryWithObject:NSLocalizedStringFromTable(@"Bad OAuth response received from the server.", @"AFNetworking", nil) forKey:NSLocalizedFailureReasonErrorKey];
+        NSError *error = [[NSError alloc] initWithDomain:AFNetworkingErrorDomain code:NSURLErrorBadServerResponse userInfo:userInfo];
+        failure(error);
+    }
 }
 
 #pragma mark - AFHTTPClient
