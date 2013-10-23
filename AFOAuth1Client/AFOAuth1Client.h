@@ -183,7 +183,8 @@ extern NSString * const kAFApplicationLaunchOptionsURLKey;
 
 
 /**
- Stores the specified OAuth token for a given web service identifier in the Keychain.
+ Stores the specified OAuth token for a given web service identifier in the Keychain
+ with the default Keychain Accessibilty of kSecAttrAccessibleWhenUnlocked.
  
  @param token The OAuth credential to be stored.
  @param identifier The service identifier associated with the specified token.
@@ -192,6 +193,19 @@ extern NSString * const kAFApplicationLaunchOptionsURLKey;
  */
 + (BOOL)storeCredential:(AFOAuth1Token *)credential
          withIdentifier:(NSString *)identifier;
+
+/**
+ Stores the specified OAuth token for a given web service identifier in the Keychain.
+
+ @param token The OAuth credential to be stored.
+ @param identifier The service identifier associated with the specified token.
+ @param securityAccessibility The Keychain security accessibility to store the credential with.
+
+ @return Whether or not the credential was stored in the keychain.
+ */
++ (BOOL)storeCredential:(AFOAuth1Token *)credential
+         withIdentifier:(NSString *)identifier
+      withAccessibility:(id)securityAccessibility;
 
 /**
  Retrieves the OAuth credential stored with the specified service identifier from the Keychain.
