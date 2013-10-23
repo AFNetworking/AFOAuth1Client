@@ -544,7 +544,7 @@ static NSDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifi
 }
 
 - (BOOL)isExpired{
-    return [self.expiration compare:[NSDate date]] == NSOrderedDescending;
+    return [self.expiration compare:[NSDate date]] == NSOrderedAscending;
 }
 
 #pragma mark -
