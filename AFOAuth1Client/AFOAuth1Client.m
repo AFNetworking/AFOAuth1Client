@@ -396,10 +396,10 @@ static NSDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifi
     NSMutableURLRequest *request = [super requestWithMethod:method path:path parameters:mutableParameters];
 
 
-    // Only use parameters in the HTTP POST request body (with a content-type of `application/x-www-form-urlencoded`).
+    // Only use parameters in the request entity body (with a content-type of `application/x-www-form-urlencoded`).
     // See RFC 5849, Section 3.4.1.3.1 http://tools.ietf.org/html/rfc5849#section-3.4
     NSDictionary *authorizationParameters = parameters;
-    if ([method isEqualToString:@"POST"]) {
+    if (![method isEqualToString:@"GET"] || ![method isEqualToString:@"HEAD"] || ![method isEqualToString:@"DELETE"]) {
         authorizationParameters = ([[request valueForHTTPHeaderField:@"Content-Type"] hasPrefix:@"application/x-www-form-urlencoded"] ? parameters : nil);
     }
     
