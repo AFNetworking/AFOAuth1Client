@@ -22,10 +22,10 @@
 
 #import "AFHTTPClient.h"
 
-typedef enum {
-    AFPlainTextSignatureMethod = 0,
-    AFHMACSHA1SignatureMethod = 1,
-} AFOAuthSignatureMethod;
+typedef NS_ENUM(NSUInteger, AFOAuthSignatureMethod) {
+    AFPlainTextSignatureMethod = 1,
+    AFHMACSHA1SignatureMethod = 2,
+};
 
 @class AFOAuth1Token;
 
