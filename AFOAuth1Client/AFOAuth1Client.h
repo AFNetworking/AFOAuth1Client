@@ -23,6 +23,7 @@
 #import "AFHTTPClient.h"
 
 typedef enum {
+    AFPlainTextSignatureMethod = 0,
     AFHMACSHA1SignatureMethod = 1,
 } AFOAuthSignatureMethod;
 
