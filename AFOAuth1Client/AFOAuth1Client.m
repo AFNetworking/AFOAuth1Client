@@ -472,12 +472,12 @@ static NSDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifi
         return nil;
     }
 
-    self.key = [decoder decodeObjectForKey:@"key"];
-    self.secret = [decoder decodeObjectForKey:@"secret"];
-    self.signatureMethod = (AFOAuthSignatureMethod)[decoder decodeIntegerForKey:@"signatureMethod"];
-    self.realm = [decoder decodeObjectForKey:@"realm"];
-    self.accessToken = [decoder decodeObjectForKey:@"accessToken"];
-    self.oauthAccessMethod = [decoder decodeObjectForKey:@"oauthAccessMethod"];
+    self.key = [decoder decodeObjectForKey:NSStringFromSelector(@selector(key))];
+    self.secret = [decoder decodeObjectForKey:NSStringFromSelector(@selector(secret))];
+    self.signatureMethod = (AFOAuthSignatureMethod)[decoder decodeIntegerForKey:NSStringFromSelector(@selector(signatureMethod))];
+    self.realm = [decoder decodeObjectForKey:NSStringFromSelector(@selector(realm))];
+    self.accessToken = [decoder decodeObjectForKey:NSStringFromSelector(@selector(accessToken))];
+    self.oauthAccessMethod = [decoder decodeObjectForKey:NSStringFromSelector(@selector(oauthAccessMethod))];
 
     return self;
 }
@@ -485,12 +485,12 @@ static NSDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifi
 - (void)encodeWithCoder:(NSCoder *)coder {
     [super encodeWithCoder:coder];
     
-    [coder encodeObject:self.key forKey:@"key"];
-    [coder encodeObject:self.secret forKey:@"secret"];
-    [coder encodeInteger:self.signatureMethod forKey:@"signatureMethod"];
-    [coder encodeObject:self.realm forKey:@"realm"];
-    [coder encodeObject:self.accessToken forKey:@"accessToken"];
-    [coder encodeObject:self.oauthAccessMethod forKey:@"oauthAccessMethod"];
+    [coder encodeObject:self.key forKey:NSStringFromSelector(@selector(key))];
+    [coder encodeObject:self.secret forKey:NSStringFromSelector(@selector(secret))];
+    [coder encodeInteger:self.signatureMethod forKey:NSStringFromSelector(@selector(signatureMethod))];
+    [coder encodeObject:self.realm forKey:NSStringFromSelector(@selector(realm))];
+    [coder encodeObject:self.accessToken forKey:NSStringFromSelector(@selector(accessToken))];
+    [coder encodeObject:self.oauthAccessMethod forKey:NSStringFromSelector(@selector(oauthAccessMethod))];
 }
 
 #pragma mark - NSCopying
@@ -665,25 +665,25 @@ static NSDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifi
         return nil;
     }
 
-    self.key = [decoder decodeObjectForKey:@"key"];
-    self.secret = [decoder decodeObjectForKey:@"secret"];
-    self.session = [decoder decodeObjectForKey:@"session"];
-    self.verifier = [decoder decodeObjectForKey:@"verifier"];
-    self.expiration = [decoder decodeObjectForKey:@"expiration"];
-    self.renewable = [decoder decodeBoolForKey:@"renewable"];
-    self.userInfo = [decoder decodeObjectForKey:@"userInfo"];
+    self.key = [decoder decodeObjectForKey:NSStringFromSelector(@selector(key))];
+    self.secret = [decoder decodeObjectForKey:NSStringFromSelector(@selector(secret))];
+    self.session = [decoder decodeObjectForKey:NSStringFromSelector(@selector(session))];
+    self.verifier = [decoder decodeObjectForKey:NSStringFromSelector(@selector(verifier))];
+    self.expiration = [decoder decodeObjectForKey:NSStringFromSelector(@selector(expiration))];
+    self.renewable = [decoder decodeBoolForKey:NSStringFromSelector(@selector(renewable))];
+    self.userInfo = [decoder decodeObjectForKey:NSStringFromSelector(@selector(userInfo))];
 
     return self;
 }
 
 - (void)encodeWithCoder:(NSCoder *)coder {
-    [coder encodeObject:self.key forKey:@"key"];
-    [coder encodeObject:self.secret forKey:@"secret"];
-    [coder encodeObject:self.session forKey:@"session"];
-    [coder encodeObject:self.verifier forKey:@"verifier"];
-    [coder encodeObject:self.expiration forKey:@"expiration"];
-    [coder encodeBool:self.renewable forKey:@"renewable"];
-    [coder encodeObject:self.userInfo forKey:@"userInfo"];
+    [coder encodeObject:self.key forKey:NSStringFromSelector(@selector(key))];
+    [coder encodeObject:self.secret forKey:NSStringFromSelector(@selector(secret))];
+    [coder encodeObject:self.session forKey:NSStringFromSelector(@selector(session))];
+    [coder encodeObject:self.verifier forKey:NSStringFromSelector(@selector(verifier))];
+    [coder encodeObject:self.expiration forKey:NSStringFromSelector(@selector(expiration))];
+    [coder encodeBool:self.renewable forKey:NSStringFromSelector(@selector(renewable))];
+    [coder encodeObject:self.userInfo forKey:NSStringFromSelector(@selector(userInfo))];
 }
 
 #pragma mark - NSCopying
