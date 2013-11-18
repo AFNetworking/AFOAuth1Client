@@ -104,6 +104,16 @@ typedef NS_ENUM(NSUInteger, AFOAuthSignatureMethod) {
                                 success:(void (^)(AFOAuth1Token *accessToken, id responseObject))success
                                 failure:(void (^)(NSError *error))failure;
 
+///----------------------------------------------------
+/// @name Configuring Service Provider Request Handling
+///----------------------------------------------------
+
+/**
+ 
+ */
+- (void)setServiceProviderRequestHandler:(void (^)(NSURLRequest *request))block
+                              completion:(void (^)())completion;
+
 @end
 
 ///----------------
@@ -147,7 +157,6 @@ extern NSString * const kAFApplicationLaunchOptionsURLKey;
  */
 @property (nonatomic, copy) NSString *verifier;
 
-
 /**
 
  */
@@ -181,7 +190,6 @@ extern NSString * const kAFApplicationLaunchOptionsURLKey;
 ///---------------------
 /// @name Authenticating
 ///---------------------
-
 
 /**
  Stores the specified OAuth token for a given web service identifier in the Keychain

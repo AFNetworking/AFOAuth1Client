@@ -25,6 +25,9 @@
 
 #import <CommonCrypto/CommonHMAC.h>
 
+typedef void (^AFServiceProviderRequestHandlerBlock)(NSURLRequest *request);
+typedef void (^AFServiceProviderRequestCompletionBlock)();
+
 static NSString * const kAFOAuth1Version = @"1.0";
 NSString * const kAFApplicationLaunchedWithURLNotification = @"kAFApplicationLaunchedWithURLNotification";
 #if __IPHONE_OS_VERSION_MIN_REQUIRED
@@ -155,6 +158,8 @@ static NSDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifi
 @property (readwrite, nonatomic, copy) NSString *key;
 @property (readwrite, nonatomic, copy) NSString *secret;
 @property (readwrite, nonatomic, strong) id applicationLaunchNotificationObserver;
+@property (readwrite, nonatomic, copy) AFServiceProviderRequestHandlerBlock serviceProviderRequestHandler;
+@property (readwrite, nonatomic, copy) AFServiceProviderRequestCompletionBlock serviceProviderRequestCompletion;
 
 - (NSDictionary *)OAuthParameters;
 - (NSString *)OAuthSignatureForMethod:(NSString *)method
@@ -296,6 +301,10 @@ static NSDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifi
             currentRequestToken.verifier = [AFParametersFromQueryString([url query]) valueForKey:@"oauth_verifier"];
 
             [self acquireOAuthAccessTokenWithPath:accessTokenPath requestToken:currentRequestToken accessMethod:accessMethod success:^(AFOAuth1Token * accessToken, id responseObject) {
+                if (self.serviceProviderRequestCompletion) {
+                    self.serviceProviderRequestCompletion();
+                }
+                
                 self.applicationLaunchNotificationObserver = nil;
                 if (accessToken) {
                     self.accessToken = accessToken;
@@ -320,11 +329,17 @@ static NSDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifi
         parameters[@"oauth_token"] = requestToken.key;
         NSMutableURLRequest *request = [super requestWithMethod:@"GET" path:userAuthorizationPath parameters:parameters];
         [request setHTTPShouldHandleCookies:NO];
+
+        if (self.serviceProviderRequestHandler) {
+            self.serviceProviderRequestHandler(request);
+        } else {
 #if __IPHONE_OS_VERSION_MIN_REQUIRED
-        [[UIApplication sharedApplication] openURL:[request URL]];
+            [[UIApplication sharedApplication] openURL:[request URL]];
 #else
-        [[NSWorkspace sharedWorkspace] openURL:[request URL]];
+            [[NSWorkspace sharedWorkspace] openURL:[request URL]];
 #endif
+        }
+        
     } failure:^(NSError *error) {
         if (failure) {
             failure(error);
@@ -394,6 +409,15 @@ static NSDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifi
         NSError *error = [[NSError alloc] initWithDomain:AFNetworkingErrorDomain code:NSURLErrorBadServerResponse userInfo:userInfo];
         failure(error);
     }
+}
+
+#pragma mark -
+
+- (void)setServiceProviderRequestHandler:(void (^)(NSURLRequest *request))block
+                              completion:(void (^)())completion
+{
+    self.serviceProviderRequestHandler = block;
+    self.serviceProviderRequestCompletion = completion;
 }
 
 #pragma mark - AFHTTPClient
