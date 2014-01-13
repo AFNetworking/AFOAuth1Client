@@ -71,7 +71,7 @@ static NSString * AFPercentEscapedQueryStringPairMemberFromStringWithEncoding(NS
 	return (__bridge_transfer NSString *)CFURLCreateStringByAddingPercentEscapes(kCFAllocatorDefault, (__bridge CFStringRef)string, (__bridge CFStringRef)kAFCharactersToLeaveUnescaped, (__bridge CFStringRef)kAFCharactersToBeEscaped, CFStringConvertNSStringEncodingToEncoding(encoding));
 }
 
-static NSDictionary * AFParametersFromQueryString(NSString *queryString) {
+NSDictionary * AFParametersFromQueryString(NSString *queryString) {
     NSMutableDictionary *parameters = [NSMutableDictionary dictionary];
     if (queryString) {
         NSScanner *parameterScanner = [[NSScanner alloc] initWithString:queryString];
@@ -354,30 +354,46 @@ static NSDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifi
                                  success:(void (^)(AFOAuth1Token *requestToken, id responseObject))success
                                  failure:(void (^)(NSError *error))failure
 {
-    [self acquireOAuthRequestTokenWithPath:path callbackURL:callbackURL accessMethod:accessMethod scope:scope parameters:[NSMutableDictionary new] success:success failure:failure];
+    NSMutableDictionary *parameters = [[self OAuthParameters] mutableCopy];
+    parameters[@"oauth_callback"] = [callbackURL absoluteString];
+    if (scope && !self.accessToken) {
+        parameters[@"scope"] = scope;
+    }
+    
+    NSMutableURLRequest *request = [self requestWithMethod:accessMethod path:path parameters:parameters];
+    [request setHTTPBody:nil];
+    
+    AFHTTPRequestOperation *operation = [self HTTPRequestOperationWithRequest:request success:^(AFHTTPRequestOperation *operation, id responseObject) {
+        if (success) {
+            AFOAuth1Token *accessToken = [[AFOAuth1Token alloc] initWithQueryString:operation.responseString];
+            success(accessToken, responseObject);
+        }
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+        if (failure) {
+            failure(error);
+        }
+    }];
+    
+    [self enqueueHTTPRequestOperation:operation];
 }
 
-- (void)acquireOAuthRequestTokenWithPath:(NSString *)path
-                             callbackURL:(NSURL *)callbackURL
-                            accessMethod:(NSString *)accessMethod
-                                   scope:(NSString *)scope
-                              parameters:(NSMutableDictionary*)parameters
-                                 success:(void (^)(AFOAuth1Token *requestToken, id responseObject))success
-                                 failure:(void (^)(NSError *error))failure
+- (void)acquireTwitterReverseAuthRequestHeaderWithPath:(NSString *)path
+                                         accessMethod:(NSString *)accessMethod
+                                                scope:(NSString *)scope
+                                              success:(void (^)(NSString * responseHeader, id responseObject))success
+                                              failure:(void (^)(NSError *error))failure
 {
-    [parameters addEntriesFromDictionary:[self OAuthParameters]];
-    parameters[@"oauth_callback"] = [callbackURL absoluteString];
+    NSMutableDictionary *parameters = [[self OAuthParameters] mutableCopy];
+    parameters[@"x_auth_mode"] = @"reverse_auth";
     if (scope && !self.accessToken) {
         parameters[@"scope"] = scope;
     }
 
     NSMutableURLRequest *request = [self requestWithMethod:accessMethod path:path parameters:parameters];
-    [request setHTTPBody:nil];
 
     AFHTTPRequestOperation *operation = [self HTTPRequestOperationWithRequest:request success:^(AFHTTPRequestOperation *operation, id responseObject) {
         if (success) {
-            AFOAuth1Token *accessToken = [[AFOAuth1Token alloc] initWithQueryString:operation.responseString];
-            success(accessToken, responseObject);
+            success(operation.responseString, responseObject);
         }
     } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
         if (failure) {
