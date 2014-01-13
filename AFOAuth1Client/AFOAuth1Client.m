@@ -261,7 +261,7 @@ static NSDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifi
     }
 
     [mutableParameters enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
-        if ([key isKindOfClass:[NSString class]] && [key hasPrefix:@"oauth_"]) {
+        if ([key isKindOfClass:[NSString class]] && ([key hasPrefix:@"oauth_"] || [key hasPrefix:@"x_auth_mode"]) ) {
             mutableAuthorizationParameters[key] = obj;
         }
     }];
@@ -366,7 +366,7 @@ static NSDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifi
                                  failure:(void (^)(NSError *error))failure
 {
     [parameters addEntriesFromDictionary:[self OAuthParameters]];
-    parameters[@"oauth_callback"] = [callbackURL absoluteString];
+//    parameters[@"oauth_callback"] = [callbackURL absoluteString];
     if (scope && !self.accessToken) {
         parameters[@"scope"] = scope;
     }
@@ -439,7 +439,7 @@ static NSDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifi
 {
     NSMutableDictionary *mutableParameters = [parameters mutableCopy];
     for (NSString *key in parameters) {
-        if ([key hasPrefix:@"oauth_"]) {
+        if ([key hasPrefix:@"oauth_"] || [key hasPrefix:@"x_auth_mode"]) {
             [mutableParameters removeObjectForKey:key];
         }
     }
