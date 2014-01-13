@@ -354,7 +354,18 @@ static NSDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifi
                                  success:(void (^)(AFOAuth1Token *requestToken, id responseObject))success
                                  failure:(void (^)(NSError *error))failure
 {
-    NSMutableDictionary *parameters = [[self OAuthParameters] mutableCopy];
+    [self acquireOAuthRequestTokenWithPath:path callbackURL:callbackURL accessMethod:accessMethod scope:scope parameters:[NSMutableDictionary new] success:success failure:failure];
+}
+
+- (void)acquireOAuthRequestTokenWithPath:(NSString *)path
+                             callbackURL:(NSURL *)callbackURL
+                            accessMethod:(NSString *)accessMethod
+                                   scope:(NSString *)scope
+                              parameters:(NSMutableDictionary*)parameters
+                                 success:(void (^)(AFOAuth1Token *requestToken, id responseObject))success
+                                 failure:(void (^)(NSError *error))failure
+{
+    [parameters addEntriesFromDictionary:[self OAuthParameters]];
     parameters[@"oauth_callback"] = [callbackURL absoluteString];
     if (scope && !self.accessToken) {
         parameters[@"scope"] = scope;

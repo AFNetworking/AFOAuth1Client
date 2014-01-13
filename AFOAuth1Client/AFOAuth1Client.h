@@ -96,6 +96,17 @@ typedef NS_ENUM(NSUInteger, AFOAuthSignatureMethod) {
                                  failure:(void (^)(NSError *error))failure;
 
 /**
+ 
+ */
+- (void)acquireOAuthRequestTokenWithPath:(NSString *)path
+                             callbackURL:(NSURL *)callbackURL
+                            accessMethod:(NSString *)accessMethod
+                                   scope:(NSString *)scope
+                              parameters:(NSMutableDictionary*)parameters
+                                 success:(void (^)(AFOAuth1Token *requestToken, id responseObject))success
+                                 failure:(void (^)(NSError *error))failure;
+
+/**
 
  */
 - (void)acquireOAuthAccessTokenWithPath:(NSString *)path
