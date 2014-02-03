@@ -3,6 +3,7 @@ Pod::Spec.new do |s|
   s.version      = "0.3.3"
   s.summary      = "AFNetworking Extension for OAuth 1.0a Authentication."
   s.homepage     = "https://github.com/AFNetworking/AFOAuth1Client"
+  s.social_media_url = "https://twitter.com/AFNetworking"
   s.license      = 'MIT'
   s.author       = { 'Mattt Thompson' => 'm@mattt.me' }
   s.source       = { :git => "https://github.com/AFNetworking/AFOAuth1Client.git", :tag => '0.3.3' }
