@@ -32,19 +32,16 @@
     LSSetDefaultHandlerForURLScheme((__bridge CFStringRef)@"af-twitter", (__bridge CFStringRef)[[NSBundle mainBundle] bundleIdentifier]);
     
     self.twitterClient = [[AFOAuth1Client alloc] initWithBaseURL:[NSURL URLWithString:@"https://api.twitter.com/1.1/"] key:@"4oFCF0AjP4PQDUaCh5RQ" secret:@"NxAihESVsdUXSUxtHrml2VBHA0xKofYKmmGS01KaSs"];
-    [self.twitterClient registerHTTPOperationClass:[AFJSONRequestOperation class]];
 
     [self.twitterClient authorizeUsingOAuthWithRequestTokenPath:@"/oauth/request_token" userAuthorizationPath:@"/oauth/authorize" callbackURL:[NSURL URLWithString:@"af-twitter://success"] accessTokenPath:@"/oauth/access_token" accessMethod:@"POST" scope:nil success:^(AFOAuth1Token *accessToken, id responseObject) {
-        NSLog(@"Success: %@", accessToken);
-        
-        [self.twitterClient getPath:@"statuses/user_timeline.json" parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
-            NSArray *responseArray = (NSArray *)responseObject;
-            [responseArray enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
-                NSLog(@"Success: %@", obj);
-            }];
-        } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
-            NSLog(@"Error: %@", error);
-        }];
+		NSMutableURLRequest *request = [self.twitterClient requestWithMethod:@"GET" path:@"statuses/user_timeline.json" parameters:nil];
+		AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+		AFHTTPRequestOperation *operation = [[AFHTTPRequestOperationManager manager] HTTPRequestOperationWithRequest:request success:^(AFHTTPRequestOperation *operation, id responseObject) {
+			NSLog(@"Success: %@", responseObject);
+		} failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+			NSLog(@"Error: %@", [error localizedDescription]);
+		}];
+		[manager.operationQueue addOperation:operation];
     } failure:^(NSError *error) {
         NSLog(@"Error: %@", error);
     }];
