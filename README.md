@@ -34,11 +34,9 @@ Here's how to respond to the custom URL scheme on iOS:
 
 ## Contact
 
-Mattt Thompson
+Joel Chen
 
-- http://github.com/mattt
-- http://twitter.com/mattt
-- m@mattt.me
+http://lnkd.in/bwwnBWR
 
 ## License
 
