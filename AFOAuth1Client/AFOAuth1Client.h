@@ -27,6 +27,8 @@ typedef NS_ENUM(NSUInteger, AFOAuthSignatureMethod) {
     AFHMACSHA1SignatureMethod = 2,
 };
 
+NSDictionary * AFParametersFromQueryString(NSString *queryString);
+
 @class AFOAuth1Token;
 
 /**
@@ -94,6 +96,15 @@ typedef NS_ENUM(NSUInteger, AFOAuthSignatureMethod) {
                                    scope:(NSString *)scope
                                  success:(void (^)(AFOAuth1Token *requestToken, id responseObject))success
                                  failure:(void (^)(NSError *error))failure;
+
+/**
+ 
+ */
+- (void)acquireTwitterReverseAuthRequestHeaderWithPath:(NSString *)path
+                                          accessMethod:(NSString *)accessMethod
+                                                 scope:(NSString *)scope
+                                               success:(void (^)(NSString * responseHeader, id responseObject))success
+                                               failure:(void (^)(NSError *error))failure;
 
 /**
 

@@ -71,7 +71,7 @@ static NSString * AFPercentEscapedQueryStringPairMemberFromStringWithEncoding(NS
 	return (__bridge_transfer NSString *)CFURLCreateStringByAddingPercentEscapes(kCFAllocatorDefault, (__bridge CFStringRef)string, (__bridge CFStringRef)kAFCharactersToLeaveUnescaped, (__bridge CFStringRef)kAFCharactersToBeEscaped, CFStringConvertNSStringEncodingToEncoding(encoding));
 }
 
-static NSDictionary * AFParametersFromQueryString(NSString *queryString) {
+NSDictionary * AFParametersFromQueryString(NSString *queryString) {
     NSMutableDictionary *parameters = [NSMutableDictionary dictionary];
     if (queryString) {
         NSScanner *parameterScanner = [[NSScanner alloc] initWithString:queryString];
@@ -359,14 +359,41 @@ static NSDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifi
     if (scope && !self.accessToken) {
         parameters[@"scope"] = scope;
     }
-
+    
     NSMutableURLRequest *request = [self requestWithMethod:accessMethod path:path parameters:parameters];
     [request setHTTPBody:nil];
-
+    
     AFHTTPRequestOperation *operation = [self HTTPRequestOperationWithRequest:request success:^(AFHTTPRequestOperation *operation, id responseObject) {
         if (success) {
             AFOAuth1Token *accessToken = [[AFOAuth1Token alloc] initWithQueryString:operation.responseString];
             success(accessToken, responseObject);
+        }
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+        if (failure) {
+            failure(error);
+        }
+    }];
+    
+    [self enqueueHTTPRequestOperation:operation];
+}
+
+- (void)acquireTwitterReverseAuthRequestHeaderWithPath:(NSString *)path
+                                         accessMethod:(NSString *)accessMethod
+                                                scope:(NSString *)scope
+                                              success:(void (^)(NSString * responseHeader, id responseObject))success
+                                              failure:(void (^)(NSError *error))failure
+{
+    NSMutableDictionary *parameters = [[self OAuthParameters] mutableCopy];
+    parameters[@"x_auth_mode"] = @"reverse_auth";
+    if (scope && !self.accessToken) {
+        parameters[@"scope"] = scope;
+    }
+
+    NSMutableURLRequest *request = [self requestWithMethod:accessMethod path:path parameters:parameters];
+
+    AFHTTPRequestOperation *operation = [self HTTPRequestOperationWithRequest:request success:^(AFHTTPRequestOperation *operation, id responseObject) {
+        if (success) {
+            success(operation.responseString, responseObject);
         }
     } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
         if (failure) {
@@ -677,7 +704,7 @@ static NSDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifi
     self.session = [decoder decodeObjectForKey:NSStringFromSelector(@selector(session))];
     self.verifier = [decoder decodeObjectForKey:NSStringFromSelector(@selector(verifier))];
     self.expiration = [decoder decodeObjectForKey:NSStringFromSelector(@selector(expiration))];
-    self.renewable = [decoder decodeBoolForKey:NSStringFromSelector(@selector(renewable))];
+    self.renewable = [decoder decodeBoolForKey:NSStringFromSelector(@selector(canBeRenewed))];
     self.userInfo = [decoder decodeObjectForKey:NSStringFromSelector(@selector(userInfo))];
 
     return self;
@@ -689,7 +716,7 @@ static NSDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifi
     [coder encodeObject:self.session forKey:NSStringFromSelector(@selector(session))];
     [coder encodeObject:self.verifier forKey:NSStringFromSelector(@selector(verifier))];
     [coder encodeObject:self.expiration forKey:NSStringFromSelector(@selector(expiration))];
-    [coder encodeBool:self.renewable forKey:NSStringFromSelector(@selector(renewable))];
+    [coder encodeBool:self.renewable forKey:NSStringFromSelector(@selector(canBeRenewed))];
     [coder encodeObject:self.userInfo forKey:NSStringFromSelector(@selector(userInfo))];
 }
 
