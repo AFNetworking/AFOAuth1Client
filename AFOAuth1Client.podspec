@@ -6,7 +6,7 @@ Pod::Spec.new do |s|
   s.social_media_url = "https://twitter.com/AFNetworking"
   s.license      = 'MIT'
   s.author       = { 'Mattt Thompson' => 'm@mattt.me' }
-  s.source       = { :git => "https://github.com/AFNetworking/AFOAuth1Client.git", :tag => '0.3.3' }
+  s.source       = { :git => "https://github.com/AFNetworking/AFOAuth1Client.git", :tag => '0.3.4' }
   s.source_files = 'AFOAuth1Client'
   s.requires_arc = true
 
@@ -16,7 +16,7 @@ Pod::Spec.new do |s|
   s.osx.deployment_target = '10.7'
   s.osx.frameworks = 'CoreServices', 'SystemConfiguration', 'Security'
 
-  s.dependency 'AFNetworking', '~> 1.3'
+  s.dependency 'AFNetworking', '~> 2.1'
 
   s.prefix_header_contents = <<-EOS
 #import <Availability.h>
