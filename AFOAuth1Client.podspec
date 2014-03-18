@@ -6,7 +6,7 @@ Pod::Spec.new do |s|
   s.social_media_url = "https://twitter.com/AFNetworking"
   s.license      = 'MIT'
   s.author       = { 'Mattt Thompson' => 'm@mattt.me' }
-  s.source       = { :git => "https://github.com/AFNetworking/AFOAuth1Client.git", :tag => '0.3.4' }
+  s.source       = { :git => "https://github.com/WouterDS/AFOAuth1Client.git", :tag => '0.3.4' }
   s.source_files = 'AFOAuth1Client'
   s.requires_arc = true
 
