@@ -383,12 +383,14 @@ static NSDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifi
                                 success:(void (^)(AFOAuth1Token *accessToken, id responseObject))success
                                 failure:(void (^)(NSError *error))failure
 {
-    if (requestToken.key && requestToken.verifier) {
+    if (requestToken.key) {
         self.accessToken = requestToken;
         
         NSMutableDictionary *parameters = [[self OAuthParameters] mutableCopy];
         parameters[@"oauth_token"] = requestToken.key;
-        parameters[@"oauth_verifier"] = requestToken.verifier;
+        if (requestToken.verifier) {
+            parameters[@"oauth_verifier"] = requestToken.verifier;
+        }
         
         NSMutableURLRequest *request = [self requestWithMethod:accessMethod path:path parameters:parameters];
         
