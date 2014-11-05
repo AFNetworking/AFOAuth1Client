@@ -679,7 +679,7 @@ static NSDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifi
     self.session = [decoder decodeObjectForKey:NSStringFromSelector(@selector(session))];
     self.verifier = [decoder decodeObjectForKey:NSStringFromSelector(@selector(verifier))];
     self.expiration = [decoder decodeObjectForKey:NSStringFromSelector(@selector(expiration))];
-    self.renewable = [decoder decodeBoolForKey:NSStringFromSelector(@selector(renewable))];
+    self.renewable = [decoder decodeBoolForKey:NSStringFromSelector(@selector(canBeRenewed))];
     self.userInfo = [decoder decodeObjectForKey:NSStringFromSelector(@selector(userInfo))];
 
     return self;
@@ -691,7 +691,7 @@ static NSDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifi
     [coder encodeObject:self.session forKey:NSStringFromSelector(@selector(session))];
     [coder encodeObject:self.verifier forKey:NSStringFromSelector(@selector(verifier))];
     [coder encodeObject:self.expiration forKey:NSStringFromSelector(@selector(expiration))];
-    [coder encodeBool:self.renewable forKey:NSStringFromSelector(@selector(renewable))];
+    [coder encodeBool:self.renewable forKey:NSStringFromSelector(@selector(canBeRenewed))];
     [coder encodeObject:self.userInfo forKey:NSStringFromSelector(@selector(userInfo))];
 }
 
