@@ -95,8 +95,6 @@ static inline NSString * AFOAuth1HMACSHA1Signature(NSURLRequest *request, NSStri
 @property (nonatomic, copy) NSString *key;
 @property (nonatomic, copy) NSString *secret;
 
-@property (nonatomic, copy, readonly) NSDictionary *oauthParameters;
-
 @end
 
 @implementation AFOAuth1RequestSerializer
