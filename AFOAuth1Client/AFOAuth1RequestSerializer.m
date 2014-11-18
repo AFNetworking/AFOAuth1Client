@@ -10,38 +10,9 @@
 
 #import <CommonCrypto/CommonHMAC.h>
 
+#import "AFOAuth1Utils.h"
+
 static NSString * const kAFOAuth1Version = @"1.0";
-
-static NSString * AFOAuth1PercentEscapedQueryStringPairMemberFromStringWithEncoding(NSString *string, NSStringEncoding encoding) {
-    static NSString * const kAFOAuth1CharactersToBeEscaped = @":/?&=;+!@#$()',*";
-    static NSString * const kAFOAuth1CharactersToLeaveUnescaped = @"[].";
-    return (__bridge_transfer NSString *)CFURLCreateStringByAddingPercentEscapes(kCFAllocatorDefault, (__bridge CFStringRef)string, (__bridge CFStringRef)kAFOAuth1CharactersToLeaveUnescaped, (__bridge CFStringRef)kAFOAuth1CharactersToBeEscaped, CFStringConvertNSStringEncodingToEncoding(encoding));
-}
-
-static inline NSString * AFOAuth1SortedQueryString(NSString *queryString) {
-    return [[[queryString componentsSeparatedByString:@"&"] sortedArrayUsingSelector:@selector(compare:)] componentsJoinedByString:@"&"];
-}
-
-static inline NSArray * AFOAuth1SortedQueryItemsFromQueryString(NSString *queryString) {
-    NSArray *sortedQueryPairs = [[queryString componentsSeparatedByString:@"&"] sortedArrayUsingSelector:@selector(compare:)];
-    NSMutableArray *sortedQueryItems = [[NSMutableArray alloc] init];
-    for (NSString *queryPair in sortedQueryPairs) {
-        NSArray *queryItem = [queryPair componentsSeparatedByString:@"="];
-        [sortedQueryItems addObject:queryItem];
-    }
-    return sortedQueryItems;
-}
-
-// FIXME: (me@lxcid.com) No support for nested parameters.
-static inline NSArray * AFOAuth1SortedQueryItemsFromParameters(NSDictionary *parameters) {
-    NSMutableArray *queryItems = [NSMutableArray array];
-    [parameters enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
-        [queryItems addObject:@[ key, obj ]];
-    }];
-    NSSortDescriptor *firstObjectSortDescriptor = [NSSortDescriptor sortDescriptorWithKey:@"firstObject" ascending:YES selector:@selector(compare:)];
-    [queryItems sortUsingDescriptors:@[ firstObjectSortDescriptor ]];
-    return [queryItems copy];
-}
 
 static inline NSString * AFOAuth1Nounce() {
     CFUUIDRef uuid = CFUUIDCreate(NULL);
@@ -73,11 +44,11 @@ static inline NSString * AFOAuth1PlainTextSignature(NSURLRequest *request, NSStr
 
 static inline NSString * AFOAuth1HMACSHA1Signature(NSURLRequest *request, NSString *consumerSecret, NSString *tokenSecret, NSStringEncoding stringEncoding) {
     NSString *secret = tokenSecret ? tokenSecret : @"";
-    NSString *secretString = [NSString stringWithFormat:@"%@&%@", AFOAuth1PercentEscapedQueryStringPairMemberFromStringWithEncoding(consumerSecret, stringEncoding), AFOAuth1PercentEscapedQueryStringPairMemberFromStringWithEncoding(secret, stringEncoding)];
+    NSString *secretString = [NSString stringWithFormat:@"%@&%@", [AFOAuth1Utils percentEscapedQueryStringPairMemberFromString:consumerSecret withEncoding:stringEncoding], [AFOAuth1Utils percentEscapedQueryStringPairMemberFromString:secret withEncoding:stringEncoding]];
     NSData *secretStringData = [secretString dataUsingEncoding:stringEncoding];
     
-    NSString *queryString = AFOAuth1PercentEscapedQueryStringPairMemberFromStringWithEncoding(AFOAuth1SortedQueryString(request.URL.query), stringEncoding);
-    NSString *urlWithoutQueryString = AFOAuth1PercentEscapedQueryStringPairMemberFromStringWithEncoding([request.URL.absoluteString componentsSeparatedByString:@"?"][0], stringEncoding);
+    NSString *queryString = [AFOAuth1Utils percentEscapedQueryStringPairMemberFromString:[AFOAuth1Utils sortedQueryString:request.URL.query] withEncoding:stringEncoding];
+    NSString *urlWithoutQueryString = [AFOAuth1Utils percentEscapedQueryStringPairMemberFromString:[request.URL.absoluteString componentsSeparatedByString:@"?"][0] withEncoding:stringEncoding];
     NSString *requestString = [NSString stringWithFormat:@"%@&%@&%@", request.HTTPMethod, urlWithoutQueryString, queryString];
     NSData *requestStringData = [requestString dataUsingEncoding:stringEncoding];
     
@@ -172,12 +143,12 @@ static inline NSString * AFOAuth1HMACSHA1Signature(NSURLRequest *request, NSStri
     }
     mutableAuthorizationParameters[@"oauth_signature"] = oauthSignature;
     
-    NSArray *sortedQueryItems = AFOAuth1SortedQueryItemsFromParameters(parameters);
+    NSArray *sortedQueryItems = [AFOAuth1Utils sortedQueryItemsFromParameters:parameters];
     NSMutableArray *mutableComponents = [NSMutableArray array];
     for (NSArray *queryItem in sortedQueryItems) {
         if (queryItem.count == 2) {
-            NSString *key = AFOAuth1PercentEscapedQueryStringPairMemberFromStringWithEncoding(queryItem[0], self.stringEncoding);
-            NSString *value = AFOAuth1PercentEscapedQueryStringPairMemberFromStringWithEncoding(queryItem[1], self.stringEncoding);
+            NSString *key = [AFOAuth1Utils percentEscapedQueryStringPairMemberFromString:queryItem[0] withEncoding:self.stringEncoding];
+            NSString *value = [AFOAuth1Utils percentEscapedQueryStringPairMemberFromString:queryItem[1] withEncoding:self.stringEncoding];
             NSString *component = [NSString stringWithFormat:@"%@=\"%@\"", key, value];
             [mutableComponents addObject:component];
         }
