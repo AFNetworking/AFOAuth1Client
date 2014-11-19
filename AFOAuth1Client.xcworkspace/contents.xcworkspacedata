@@ -10,6 +10,24 @@
       <FileRef
          location = "group:AFOAuth1Client.m">
       </FileRef>
+      <FileRef
+         location = "group:AFOAuth1RequestSerializer.h">
+      </FileRef>
+      <FileRef
+         location = "group:AFOAuth1RequestSerializer.m">
+      </FileRef>
+      <FileRef
+         location = "group:AFOAuth1Token.h">
+      </FileRef>
+      <FileRef
+         location = "group:AFOAuth1Token.m">
+      </FileRef>
+      <FileRef
+         location = "group:AFOAuth1Utils.h">
+      </FileRef>
+      <FileRef
+         location = "group:AFOAuth1Utils.m">
+      </FileRef>
    </Group>
    <FileRef
       location = "group:Twitter iOS Example Client/Twitter iOS Example Client.xcodeproj">

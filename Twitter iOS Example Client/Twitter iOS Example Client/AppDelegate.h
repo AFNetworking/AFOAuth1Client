@@ -24,7 +24,6 @@
 #import <UIKit/UIKit.h>
 
 #import "AFOAuth1Client.h"
-#import "AFJSONRequestOperation.h"
 
 @interface AppDelegate : UIResponder <UIApplicationDelegate>
 
