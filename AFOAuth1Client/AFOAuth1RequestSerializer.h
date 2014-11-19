@@ -8,7 +8,7 @@
 
 #import "AFURLRequestSerialization.h"
 
-#import "AFOAuth1Client.h"
+@class AFOAuth1Token;
 
 typedef NS_ENUM(NSUInteger, AFOAuth1SignatureMethod) {
     AFOAuth1PlainTextSignatureMethod = 1,
