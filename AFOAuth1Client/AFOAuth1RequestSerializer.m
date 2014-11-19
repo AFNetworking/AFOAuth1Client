@@ -144,7 +144,7 @@ static inline NSString * AFOAuth1HMACSHA1Signature(NSURLRequest *request, NSStri
     }
     mutableAuthorizationParameters[@"oauth_signature"] = oauthSignature;
     
-    NSArray *sortedQueryItems = [AFOAuth1Utils sortedQueryItemsFromParameters:parameters];
+    NSArray *sortedQueryItems = [AFOAuth1Utils sortedQueryItemsFromParameters:mutableAuthorizationParameters];
     NSMutableArray *mutableComponents = [NSMutableArray array];
     for (NSArray *queryItem in sortedQueryItems) {
         if (queryItem.count == 2) {
@@ -184,7 +184,7 @@ static inline NSString * AFOAuth1HMACSHA1Signature(NSURLRequest *request, NSStri
     if (!authorizationHeader) {
         return nil;
     }
-    [request setValue:authorizationHeader forKey:@"Authorization"];
+    [request setValue:authorizationHeader forHTTPHeaderField:@"Authorization"];
     [request setHTTPShouldHandleCookies:NO];
     
     return request;

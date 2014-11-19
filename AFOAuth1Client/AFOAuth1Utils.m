@@ -58,8 +58,11 @@
     [parameters enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
         [queryItems addObject:@[ key, obj ]];
     }];
-    NSSortDescriptor *firstObjectSortDescriptor = [NSSortDescriptor sortDescriptorWithKey:@"firstObject" ascending:YES selector:@selector(compare:)];
-    [queryItems sortUsingDescriptors:@[ firstObjectSortDescriptor ]];
+    [queryItems sortUsingComparator:^NSComparisonResult(NSArray *queryItem1, NSArray *queryItem2) {
+        id key1 = queryItem1.firstObject;
+        id key2 = queryItem2.firstObject;
+        return [key1 compare:key2];
+    }];
     return [queryItems copy];
 }
 

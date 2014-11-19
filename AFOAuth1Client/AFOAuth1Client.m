@@ -62,13 +62,13 @@ NSString * const kAFApplicationLaunchOptionsURLKey = @"NSApplicationLaunchOption
 
 #pragma mark - Object Life Cycle
 
-- (instancetype)initWithBaseURL:(NSURL *)url
+- (instancetype)initWithBaseURL:(NSURL *)URL
                             key:(NSString *)key
                          secret:(NSString *)secret {
     NSParameterAssert(key);
     NSParameterAssert(secret);
     
-    self = [super initWithBaseURL:url];
+    self = [super initWithBaseURL:URL];
     if (!self) {
         return nil;
     }
@@ -139,7 +139,7 @@ NSString * const kAFApplicationLaunchOptionsURLKey = @"NSApplicationLaunchOption
         NSMutableDictionary *mutableParameters = [NSMutableDictionary dictionary];
         mutableParameters[@"oauth_token"] = requestToken.key;
         NSError *error = nil;
-        NSMutableURLRequest *request = [self.requestSerializer requestWithMethod:@"GET" URLString:userAuthorizationURLString parameters:mutableParameters error:&error];
+        NSMutableURLRequest *request = [[AFHTTPRequestSerializer serializer] requestWithMethod:@"GET" URLString:[[NSURL URLWithString:userAuthorizationURLString relativeToURL:self.baseURL] absoluteString] parameters:mutableParameters error:&error];
         if (!request) {
             if (failure) {
                 failure(error);
@@ -188,7 +188,7 @@ NSString * const kAFApplicationLaunchOptionsURLKey = @"NSApplicationLaunchOption
     
     NSDictionary *parameters = [mutableParameters copy];
     NSError *error = nil;
-    NSMutableURLRequest *request = [oauth1RequestSerializer requestWithMethod:accessMethod URLString:URLString parameters:parameters error:&error];
+    NSMutableURLRequest *request = [oauth1RequestSerializer requestWithMethod:accessMethod URLString:[[NSURL URLWithString:URLString relativeToURL:self.baseURL] absoluteString] parameters:parameters error:&error];
     if (error) {
         if (failure) {
             failure(error);
@@ -254,7 +254,7 @@ NSString * const kAFApplicationLaunchOptionsURLKey = @"NSApplicationLaunchOption
     
     NSDictionary *parameters = [mutableParameters copy];
     NSError *error = nil;
-    NSMutableURLRequest *request = [oauth1RequestSerializer requestWithMethod:accessMethod URLString:URLString parameters:parameters error:&error];
+    NSMutableURLRequest *request = [oauth1RequestSerializer requestWithMethod:accessMethod URLString:[[NSURL URLWithString:URLString relativeToURL:self.baseURL] absoluteString] parameters:parameters error:&error];
     if (error) {
         if (failure) {
             failure(error);
