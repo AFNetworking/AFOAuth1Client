@@ -10,10 +10,10 @@ Pod::Spec.new do |s|
   s.source_files = 'AFOAuth1Client'
   s.requires_arc = true
 
-  s.ios.deployment_target = '6.0'
+  s.ios.deployment_target = '7.0'
   s.ios.frameworks = 'MobileCoreServices', 'SystemConfiguration', 'Security', 'CoreGraphics'
 
-  s.osx.deployment_target = '10.8'
+  s.osx.deployment_target = '10.9'
   s.osx.frameworks = 'CoreServices', 'SystemConfiguration', 'Security'
 
   s.dependency 'AFNetworking', '~> 2.4'
