@@ -81,10 +81,15 @@ typedef NS_ENUM(NSUInteger, AFOAuthSignatureMethod) {
                                         failure:(void (^)(NSError *error))failure;
 
 /**
-
+ @param path 
+ @param callbackURL The URL to be set for `oauth_callback`. If `nil`, "oob" (out-of-band) is specified.
+ @param accessMethod
+ @param scope
+ @param success
+ @param failure
  */
 - (void)acquireOAuthRequestTokenWithPath:(NSString *)path
-                             callbackURL:(NSURL *)url
+                             callbackURL:(NSURL *)callbackURL
                             accessMethod:(NSString *)accessMethod
                                    scope:(NSString *)scope
                                  success:(void (^)(AFOAuth1Token *requestToken, id responseObject))success
