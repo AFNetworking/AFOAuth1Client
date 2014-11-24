@@ -1,31 +1,44 @@
 # AFOAuth1Client
 
-## Instructions
+AFOAuth1Client is an extension for [AFNetworking](http://github.com/AFNetworking/AFNetworking/) that simplifies the process of authenticating against an [OAuth 1.0a](https://tools.ietf.org/html/rfc5849) provider.
+
+## Usage
+
+```objective-c
+NSURL *baseURL = [NSURL URLWithString:@"https://twitter.com/oauth/"];
+AFOAuth1Client *OAuth1Client = [[AFOAuth1Client alloc] initWithBaseURL:baseURL
+                                                                   key:@"..."
+                                                                secret:@"..."];
+```
 
 Register your application to [launch from a custom URL scheme](http://iphonedevelopertips.com/cocoa/launching-your-own-application-via-a-custom-url-scheme.html), and use that with the path `/success` as your callback URL.  The callback for the custom URL scheme should send a notification, which will complete the OAuth transaction.
 
-Here's how to create a client and authenticate:
-
-``` objective-c
-AFOAuth1Client *twitterClient = [[[AFOAuth1Client alloc] initWithBaseURL:[NSURL URLWithString:@"https://twitter.com/oauth/"] key:@"..." secret:@"..."] autorelease];
-    
-// Your application will be sent to the background until the user authenticates, and then the app will be brought back using the callback URL
-[twitterClient authorizeUsingOAuthWithRequestTokenPath:@"/request_token" userAuthorizationPath:@"/authorize" callbackURL:[NSURL URLWithString:@"x-com-YOUR-APP-SCHEME://success"] accessTokenPath:@"/access_token" success:^(AFOAuth1Token *accessToken) {
-    NSLog(@"Success: %@", accessToken);
-} failure:^(NSError *error) {
-    NSLog(@"Error: %@", error);
-}];
+```objective-c
+NSURL *callbackURL = [NSURL URLWithString:@"x-com-YOUR-APP-SCHEME://success"];
+[OAuth1Client authorizeUsingOAuthWithRequestTokenPath:@"/request_token"
+                                userAuthorizationPath:@"/authorize"
+                                          callbackURL:callbackURL
+                                      accessTokenPath:@"/access_token"
+                                              success:^(AFOAuth1Token *accessToken) {
+                                                  NSLog(@"Success: %@", accessToken);
+                                              }
+                                              failure:^(NSError *error) {
+                                                  NSLog(@"Error: %@", error);
+                                              }];
 ```
 
-Here's how to respond to the custom URL scheme on iOS: 
+Responding to the custom URL scheme on iOS:
 
-``` objective-c
+```objective-c
 - (BOOL)application:(UIApplication *)application
-            openURL:(NSURL *)url
+            openURL:(NSURL *)URL
   sourceApplication:(NSString *)sourceApplication
          annotation:(id)annotation
 {
-    NSNotification *notification = [NSNotification notificationWithName:kAFApplicationLaunchedWithURLNotification object:nil userInfo:@{kAFApplicationLaunchOptionsURLKey: url}];
+    NSNotification *notification =
+        [NSNotification notificationWithName:kAFApplicationLaunchedWithURLNotification
+                                      object:nil
+                                    userInfo:@{kAFApplicationLaunchOptionsURLKey: URL}];
     [[NSNotificationCenter defaultCenter] postNotification:notification];
 
     return YES;
