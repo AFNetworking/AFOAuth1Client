@@ -53,11 +53,6 @@ typedef NS_ENUM(NSUInteger, AFOAuthSignatureMethod) {
  */
 @property (nonatomic, strong) AFOAuth1Token *accessToken;
 
-/**
-
- */
-@property (nonatomic, strong) NSString *oauthAccessMethod;
-
 ///---------------------
 /// @name Initialization
 ///---------------------

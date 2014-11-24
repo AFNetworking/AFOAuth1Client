@@ -191,8 +191,6 @@ static NSDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifi
 
     self.signatureMethod = AFHMACSHA1SignatureMethod;
 
-    self.oauthAccessMethod = @"GET";
-
     return self;
 }
 
@@ -328,6 +326,7 @@ static NSDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifi
 
         NSMutableDictionary *parameters = [NSMutableDictionary dictionary];
         parameters[@"oauth_token"] = requestToken.key;
+
         NSMutableURLRequest *request = [super requestWithMethod:@"GET" path:userAuthorizationPath parameters:parameters];
         [request setHTTPShouldHandleCookies:NO];
 
@@ -478,7 +477,6 @@ static NSDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifi
     self.signatureMethod = (AFOAuthSignatureMethod)[decoder decodeIntegerForKey:NSStringFromSelector(@selector(signatureMethod))];
     self.realm = [decoder decodeObjectForKey:NSStringFromSelector(@selector(realm))];
     self.accessToken = [decoder decodeObjectForKey:NSStringFromSelector(@selector(accessToken))];
-    self.oauthAccessMethod = [decoder decodeObjectForKey:NSStringFromSelector(@selector(oauthAccessMethod))];
 
     return self;
 }
@@ -491,7 +489,6 @@ static NSDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifi
     [coder encodeInteger:self.signatureMethod forKey:NSStringFromSelector(@selector(signatureMethod))];
     [coder encodeObject:self.realm forKey:NSStringFromSelector(@selector(realm))];
     [coder encodeObject:self.accessToken forKey:NSStringFromSelector(@selector(accessToken))];
-    [coder encodeObject:self.oauthAccessMethod forKey:NSStringFromSelector(@selector(oauthAccessMethod))];
 }
 
 #pragma mark - NSCopying
@@ -501,7 +498,6 @@ static NSDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifi
     copy.signatureMethod = self.signatureMethod;
     copy.realm = self.realm;
     copy.accessToken = self.accessToken;
-    copy.oauthAccessMethod = self.oauthAccessMethod;
 
     return copy;
 }
