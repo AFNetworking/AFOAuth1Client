@@ -23,6 +23,7 @@
 #import "AFOAuth1Client.h"
 #import "AFHTTPRequestOperation.h"
 
+#import <Security/Security.h>
 #import <CommonCrypto/CommonHMAC.h>
 
 typedef void (^AFServiceProviderRequestHandlerBlock)(NSURLRequest *request);
