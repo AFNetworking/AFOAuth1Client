@@ -1,7 +1,8 @@
-// AppDelegate.m
 //
-// Created by Enrico Ghirardi
-// Copyright (c) 2011 Mattt Thompson (http://mattt.me/)
+//  AppDelegate.m
+//
+//  Created by Joel Chen on 3/4/14.
+//  Copyright (c) 2014 Joel Chen [http://lnkd.in/bwwnBWR]
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -37,16 +38,15 @@ didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 
     self.twitterClient = [[AFOAuth1Client alloc] initWithBaseURL:[NSURL URLWithString:@"https://api.twitter.com/1.1/"] key:@"4oFCF0AjP4PQDUaCh5RQ" secret:@"NxAihESVsdUXSUxtHrml2VBHA0xKofYKmmGS01KaSs"];
 
-    [self.twitterClient authorizeUsingOAuthWithRequestTokenPath:@"/oauth/request_token" userAuthorizationPath:@"/oauth/authorize" callbackURL:[NSURL URLWithString:@"af-twitter://success"] accessTokenPath:@"/oauth/access_token" accessMethod:@"POST" scope:nil success:^(AFOAuth1Token *accessToken, id responseObject) {               
-        [self.twitterClient registerHTTPOperationClass:[AFJSONRequestOperation class]];
-        [self.twitterClient getPath:@"statuses/user_timeline.json" parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
-            NSArray *responseArray = (NSArray *)responseObject;
-            [responseArray enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
-                NSLog(@"Success: %@", obj);
-            }];
-        } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
-            NSLog(@"Error: %@", error);
-        }];
+    [self.twitterClient authorizeUsingOAuthWithRequestTokenPath:@"/oauth/request_token" userAuthorizationPath:@"/oauth/authorize" callbackURL:[NSURL URLWithString:@"af-twitter://success"] accessTokenPath:@"/oauth/access_token" accessMethod:@"POST" scope:nil success:^(AFOAuth1Token *accessToken, id responseObject) {
+		NSMutableURLRequest *request = [self.twitterClient requestWithMethod:@"GET" path:@"statuses/user_timeline.json" parameters:nil];
+		AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+		AFHTTPRequestOperation *operation = [[AFHTTPRequestOperationManager manager] HTTPRequestOperationWithRequest:request success:^(AFHTTPRequestOperation *operation, id responseObject) {
+			NSLog(@"Success: %@", responseObject);
+		} failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+			NSLog(@"Error: %@", [error localizedDescription]);
+		}];
+		[manager.operationQueue addOperation:operation];
     } failure:^(NSError *error) {
         NSLog(@"Error: %@", error);
     }];

@@ -1,7 +1,8 @@
-// AppDelegate.h
 //
-// Created by Enrico Ghirardi
-// Copyright (c) 2011 Mattt Thompson (http://mattt.me/)
+//  AppDelegate.h
+//
+//  Created by Joel Chen on 3/4/14.
+//  Copyright (c) 2014 Joel Chen [http://lnkd.in/bwwnBWR]
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +25,6 @@
 #import <UIKit/UIKit.h>
 
 #import "AFOAuth1Client.h"
-#import "AFJSONRequestOperation.h"
 
 @interface AppDelegate : UIResponder <UIApplicationDelegate>
 
