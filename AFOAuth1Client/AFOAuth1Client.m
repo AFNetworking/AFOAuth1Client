@@ -362,7 +362,7 @@ static NSDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifi
         parameters[@"oauth_callback"] = @"oob";
     }
 
-    if (scope && !self.accessToken) {
+    if (!self.accessToken && scope && ![scope isEqualToString:@""]) {
         parameters[@"scope"] = scope;
     }
 
