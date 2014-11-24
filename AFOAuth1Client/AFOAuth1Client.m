@@ -355,7 +355,8 @@ static NSDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifi
                                  failure:(void (^)(NSError *error))failure
 {
     NSMutableDictionary *parameters = [[self OAuthParameters] mutableCopy];
-    parameters[@"oauth_callback"] = [callbackURL absoluteString];
+	if ( callbackURL != nil )
+		parameters[@"oauth_callback"] = [callbackURL absoluteString];
     if (scope && !self.accessToken) {
         parameters[@"scope"] = scope;
     }
