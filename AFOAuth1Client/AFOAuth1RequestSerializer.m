@@ -71,6 +71,8 @@ static inline NSString * AFOAuth1HMACSHA1Signature(NSURLRequest *request, NSStri
 
 @implementation AFOAuth1RequestSerializer
 
+// FIXME: (me@lxcid.com) Implements NSCoding & NSCopying.
+
 + (instancetype)serializerWithKey:(NSString *)key secret:(NSString *)secret {
     NSParameterAssert(key);
     NSParameterAssert(secret);
@@ -79,7 +81,6 @@ static inline NSString * AFOAuth1HMACSHA1Signature(NSURLRequest *request, NSStri
     serializer.key = key;
     serializer.secret = secret;
     serializer.signatureMethod = AFOAuth1HMACSHA1SignatureMethod;
-    serializer.oauthAccessMethod = @"GET";
     
     return serializer;
 }

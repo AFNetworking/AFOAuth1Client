@@ -39,11 +39,6 @@ typedef NS_ENUM(NSUInteger, AFOAuth1SignatureMethod) {
 /**
  
  */
-@property (nonatomic, copy) NSString *oauthAccessMethod;
-
-/**
- 
- */
 @property (nonatomic, copy, readonly) NSDictionary *oauthParameters;
 
 + (instancetype)serializerWithKey:(NSString *)key secret:(NSString *)secret;
