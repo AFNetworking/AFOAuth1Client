@@ -1,6 +1,6 @@
 // AFOAuth1Client.m
 //
-// Copyright (c) 2011 Mattt Thompson (http://mattt.me/)
+// Copyright (c) 2011-2014 AFNetworking (http://afnetworking.com)
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
