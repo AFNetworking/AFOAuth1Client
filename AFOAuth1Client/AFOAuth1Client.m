@@ -199,7 +199,6 @@ NSString * const kAFApplicationLaunchOptionsURLKey = @"NSApplicationLaunchOption
         }
         return nil;
     }
-    [request setHTTPBody:nil];
     
     NSURLSessionDataTask *dataTask = [self dataTaskWithRequest:request completionHandler:^(NSURLResponse *response, id responseObject, NSError *error) {
         if (error) {
