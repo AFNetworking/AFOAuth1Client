@@ -62,7 +62,6 @@
        expiration:(NSDate *)expiration
         renewable:(BOOL)canBeRenewed;
 
-#ifdef _SECURITY_SECITEM_H_
 ///---------------------
 /// @name Authenticating
 ///---------------------
@@ -109,6 +108,5 @@
  @return Whether or not the token was deleted from the keychain.
  */
 + (BOOL)deleteCredentialWithIdentifier:(NSString *)identifier;
-#endif
 
 @end
