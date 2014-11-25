@@ -186,7 +186,7 @@ NSString * const kAFApplicationLaunchOptionsURLKey = @"NSApplicationLaunchOption
     } else {
         mutableParameters[@"oauth_callback"] = @"oob";
     }
-    if (scope && !oauth1RequestSerializer.accessToken) {
+    if (scope && scope.length > 0 && !oauth1RequestSerializer.accessToken) {
         mutableParameters[@"scope"] = scope;
     }
     
