@@ -22,15 +22,39 @@
 
 #import <Foundation/Foundation.h>
 
+/**
+ 
+ */
 @interface AFOAuth1Utils : NSObject
 
+/**
+ 
+ */
 + (NSString *)percentEscapedQueryStringPairMemberFromString:(NSString *)string withEncoding:(NSStringEncoding)encoding;
 
+/**
+ 
+ */
 + (NSString *)sortedQueryString:(NSString *)queryString;
+
+/**
+ 
+ */
 + (NSArray *)sortedQueryItemsFromQueryString:(NSString *)queryString;
+
+/**
+ 
+ */
 + (NSDictionary *)parametersFromQueryString:(NSString *)queryString;
+
+/**
+ 
+ */
 + (NSArray *)sortedQueryItemsFromParameters:(NSDictionary *)parameters;
 
+/**
+ 
+ */
 + (BOOL)isQueryStringValueTrue:(NSString *)value;
 
 @end

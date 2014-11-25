@@ -36,17 +36,17 @@ typedef NS_ENUM(NSUInteger, AFOAuth1SignatureMethod) {
 ///-----------------------------------
 
 /**
- 
+ The method used to create an OAuth signature. `AFPlainTextSignatureMethod` by default.
  */
 @property (nonatomic, assign) AFOAuth1SignatureMethod signatureMethod;
 
 /**
- 
+ The authentication realm.
  */
 @property (nonatomic, copy) NSString *realm;
 
 /**
- 
+ The client's access token.
  */
 @property (nonatomic, strong) AFOAuth1Token *accessToken;
 
@@ -55,6 +55,12 @@ typedef NS_ENUM(NSUInteger, AFOAuth1SignatureMethod) {
  */
 @property (nonatomic, copy, readonly) NSDictionary *oauthParameters;
 
+/**
+ Instantiates an `AFOAuth1RequestSerializer` object with the specified key, and secret.
+ 
+ @param key The client key.
+ @param secret The client secret.
+ */
 + (instancetype)serializerWithKey:(NSString *)key secret:(NSString *)secret;
 
 @end

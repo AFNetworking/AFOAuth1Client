@@ -23,58 +23,68 @@
 #import <Foundation/Foundation.h>
 
 /**
+ `AFOAuth1Token` models the credentials returned from an OAuth server, storing the key, secret, session, verifier, and whether the token is expired and can be renewed.
  
+ OAuth credentials can be stored in the user's keychain, and retrieved on subsequent launches.
  */
 @interface AFOAuth1Token : NSObject <NSCoding, NSCopying>
 
 /**
- 
+ The OAuth token key.
  */
 @property (readonly, nonatomic, copy) NSString *key;
 
 /**
- 
+ The OAuth token secret.
  */
 @property (readonly, nonatomic, copy) NSString *secret;
 
 /**
- 
+ The OAuth token session.
  */
 @property (readonly, nonatomic, copy) NSString *session;
 
 /**
- 
+ The OAuth token verifier.
  */
 @property (nonatomic, copy) NSString *verifier;
 
 /**
- 
+ Whether the OAuth token can be renewed.
  */
 @property (readonly, nonatomic, assign, getter = canBeRenewed) BOOL renewable;
 
 /**
- 
+ Whether the OAuth token is expired.
  */
 @property (readonly, nonatomic, assign, getter = isExpired) BOOL expired;
 
 /**
- 
+ Any additional information associated with the OAuth token.
  */
 @property (nonatomic, strong) NSDictionary *userInfo;
 
 /**
+ Initialize an OAuth token from a URL query string.
  
+ @param queryString The query of a URL containing the OAuth token credentials.
  */
 - (instancetype)initWithQueryString:(NSString *)queryString;
 
 /**
+ Initializes an OAuth token with the specified key, secret, session, and expiration date.
  
+ @param key The OAuth token key.
+ @param secret The OAuth token secret.
+ @param session The OAuth token session.
+ @param expiration The OAuth token expiration date
+ @param renewable Whether the OAuth token can be renewed.
  */
-- (id)initWithKey:(NSString *)key
-           secret:(NSString *)secret
-          session:(NSString *)session
-       expiration:(NSDate *)expiration
-        renewable:(BOOL)canBeRenewed;
+- (instancetype)initWithKey:(NSString *)key
+                     secret:(NSString *)secret
+                    session:(NSString *)session
+                 expiration:(NSDate *)expiration
+                  renewable:(BOOL)canBeRenewed;
 
 ///---------------------
 /// @name Authenticating
