@@ -181,7 +181,11 @@ NSString * const kAFApplicationLaunchOptionsURLKey = @"NSApplicationLaunchOption
     AFOAuth1RequestSerializer *oauth1RequestSerializer = (AFOAuth1RequestSerializer *)self.requestSerializer;
     
     NSMutableDictionary *mutableParameters = [oauth1RequestSerializer.oauthParameters mutableCopy];
-    mutableParameters[@"oauth_callback"] = [callbackURL absoluteString];
+    if (callbackURL) {
+        mutableParameters[@"oauth_callback"] = [callbackURL absoluteString];
+    } else {
+        mutableParameters[@"oauth_callback"] = @"oob";
+    }
     if (scope && !oauth1RequestSerializer.accessToken) {
         mutableParameters[@"scope"] = scope;
     }

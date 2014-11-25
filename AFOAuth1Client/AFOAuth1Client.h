@@ -82,7 +82,12 @@ extern NSString * const kAFApplicationLaunchOptionsURLKey;
                                              failure:(void (^)(NSError *error))failure;
 
 /**
-
+ @param path
+ @param callbackURL The URL to be set for `oauth_callback`. If `nil`, "oob" (out-of-band) is specified.
+ @param accessMethod
+ @param scope
+ @param success
+ @param failure
  */
 - (NSURLSessionDataTask *)acquireOAuthRequestTokenWithURLString:(NSString *)URLString
                                                     callbackURL:(NSURL *)callbackURL
