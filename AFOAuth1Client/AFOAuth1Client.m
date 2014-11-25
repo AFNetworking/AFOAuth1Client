@@ -240,7 +240,7 @@ NSString * const kAFApplicationLaunchOptionsURLKey = @"NSApplicationLaunchOption
     }
     
     AFOAuth1RequestSerializer *oauth1RequestSerializer = (AFOAuth1RequestSerializer *)self.requestSerializer;
-    if (!requestToken.key || !requestToken.verifier) {
+    if (!requestToken.key) {
         NSDictionary *userInfo = [NSDictionary dictionaryWithObject:NSLocalizedStringFromTable(@"Bad OAuth response received from the server.", @"AFNetworking", nil) forKey:NSLocalizedFailureReasonErrorKey];
         NSError *error = [[NSError alloc] initWithDomain:AFURLResponseSerializationErrorDomain code:NSURLErrorBadServerResponse userInfo:userInfo];
         if (failure) {
@@ -253,7 +253,9 @@ NSString * const kAFApplicationLaunchOptionsURLKey = @"NSApplicationLaunchOption
     
     NSMutableDictionary *mutableParameters = [oauth1RequestSerializer.oauthParameters mutableCopy];
     mutableParameters[@"oauth_token"] = requestToken.key;
-    mutableParameters[@"oauth_verifier"] = requestToken.verifier;
+    if (requestToken.verifier) {
+        mutableParameters[@"oauth_verifier"] = requestToken.verifier;
+    }
     
     NSDictionary *parameters = [mutableParameters copy];
     NSError *error = nil;
