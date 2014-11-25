@@ -85,8 +85,6 @@ static inline NSString * AFOAuth1HMACSHA1Signature(NSURLRequest *request, NSStri
 
 @implementation AFOAuth1RequestSerializer
 
-// FIXME: (me@lxcid.com) Implements NSCoding & NSCopying.
-
 + (instancetype)serializerWithKey:(NSString *)key secret:(NSString *)secret {
     NSParameterAssert(key);
     NSParameterAssert(secret);
@@ -203,6 +201,43 @@ static inline NSString * AFOAuth1HMACSHA1Signature(NSURLRequest *request, NSStri
     [request setHTTPShouldHandleCookies:NO];
     
     return request;
+}
+
+#pragma mark - NSCoding
+
+- (instancetype)initWithCoder:(NSCoder *)decoder {
+    self = [super init];
+    if (!self) {
+        return nil;
+    }
+    
+    _key = [decoder decodeObjectForKey:NSStringFromSelector(@selector(key))];
+    _secret = [decoder decodeObjectForKey:NSStringFromSelector(@selector(secret))];
+    _signatureMethod = [[decoder decodeObjectForKey:NSStringFromSelector(@selector(signatureMethod))] unsignedIntegerValue];
+    _realm = [decoder decodeObjectForKey:NSStringFromSelector(@selector(realm))];
+    _accessToken = [decoder decodeObjectForKey:NSStringFromSelector(@selector(accessToken))];
+    
+    return self;
+}
+
+- (void)encodeWithCoder:(NSCoder *)coder {
+    [coder encodeObject:self.key forKey:NSStringFromSelector(@selector(key))];
+    [coder encodeObject:self.secret forKey:NSStringFromSelector(@selector(secret))];
+    [coder encodeObject:@(self.signatureMethod) forKey:NSStringFromSelector(@selector(signatureMethod))];
+    [coder encodeObject:self.realm forKey:NSStringFromSelector(@selector(realm))];
+    [coder encodeObject:self.accessToken forKey:NSStringFromSelector(@selector(accessToken))];
+}
+
+#pragma mark - NSCopying
+
+- (instancetype)copyWithZone:(NSZone *)zone {
+    AFOAuth1RequestSerializer *copy = [[[self class] allocWithZone:zone] init];
+    copy->_key = [self.key copyWithZone:zone];
+    copy->_secret = [self.secret copyWithZone:zone];
+    copy->_signatureMethod = self.signatureMethod;
+    copy->_realm = [self.realm copyWithZone:zone];
+    copy->_accessToken = [self.accessToken copyWithZone:zone];
+    return copy;
 }
 
 @end
