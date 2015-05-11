@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-#import "AFHTTPClient.h"
+#import <AFNetworking/AFHTTPClient.h>
 
 typedef NS_ENUM(NSUInteger, AFOAuthSignatureMethod) {
     AFPlainTextSignatureMethod = 1,
