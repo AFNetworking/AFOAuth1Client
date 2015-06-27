@@ -24,7 +24,7 @@
 #import <Cocoa/Cocoa.h>
 
 #import "AFOAuth1Client.h"
-#import "AFJSONRequestOperation.h"
+//#import "AFJSONRequestOperation.h"
 
 @interface AppDelegate : NSObject <NSApplicationDelegate>
 

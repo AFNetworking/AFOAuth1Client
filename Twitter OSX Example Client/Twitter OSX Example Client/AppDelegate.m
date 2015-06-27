@@ -31,23 +31,20 @@
     [[NSAppleEventManager sharedAppleEventManager] setEventHandler:self andSelector:@selector(handleEvent:withReplyEvent:) forEventClass:kInternetEventClass andEventID:kAEGetURL];
     LSSetDefaultHandlerForURLScheme((__bridge CFStringRef)@"af-twitter", (__bridge CFStringRef)[[NSBundle mainBundle] bundleIdentifier]);
     
+    
     self.twitterClient = [[AFOAuth1Client alloc] initWithBaseURL:[NSURL URLWithString:@"https://api.twitter.com/1.1/"] key:@"4oFCF0AjP4PQDUaCh5RQ" secret:@"NxAihESVsdUXSUxtHrml2VBHA0xKofYKmmGS01KaSs"];
-    [self.twitterClient registerHTTPOperationClass:[AFJSONRequestOperation class]];
-
-    [self.twitterClient authorizeUsingOAuthWithRequestTokenPath:@"/oauth/request_token" userAuthorizationPath:@"/oauth/authorize" callbackURL:[NSURL URLWithString:@"af-twitter://success"] accessTokenPath:@"/oauth/access_token" accessMethod:@"POST" scope:nil success:^(AFOAuth1Token *accessToken, id responseObject) {
-        NSLog(@"Success: %@", accessToken);
-        
-        [self.twitterClient getPath:@"statuses/user_timeline.json" parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
-            NSArray *responseArray = (NSArray *)responseObject;
-            [responseArray enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
-                NSLog(@"Success: %@", obj);
-            }];
-        } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+    
+    [self.twitterClient authorizeUsingOAuthWithRequestTokenURLString:@"/oauth/request_token" userAuthorizationURLString:@"/oauth/authorize" callbackURL:[NSURL URLWithString:@"af-twitter://success"] accessTokenURLString:@"/oauth/access_token" accessMethod:@"POST" scope:nil success:^(AFOAuth1Token *accessToken, id responseObject) {
+        self.twitterClient.responseSerializer = [AFJSONResponseSerializer serializer];
+        [self.twitterClient GET:@"statuses/user_timeline.json" parameters:nil success:^(NSURLSessionDataTask *task, id responseObject) {
+            NSLog(@"%@", responseObject);
+        } failure:^(NSURLSessionDataTask *task, NSError *error) {
             NSLog(@"Error: %@", error);
         }];
     } failure:^(NSError *error) {
         NSLog(@"Error: %@", error);
     }];
+    
 }
 
 #pragma mark - NSAppleEventManager
