@@ -41,7 +41,7 @@ typedef NS_ENUM(NSUInteger, AFOAuthSignatureMethod) {
 ///-----------------------------------
 
 /**
- The method used to create an OAuth signature. `AFPlainTextSignatureMethod` by default.
+ The method used to create an OAuth signature. `AFHMACSHA1SignatureMethod` by default.
  */
 @property (nonatomic, assign) AFOAuthSignatureMethod signatureMethod;
 
